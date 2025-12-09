@@ -15,43 +15,48 @@ st.set_page_config(page_title="FEC Analyzer & Predictor", layout="wide")
 
 def load_and_merge_fec(uploaded_files):
     """
-    Lit plusieurs fichiers FEC, normalise les colonnes et les fusionne.
-    Gère les séparateurs '|' ou ';' et le format des nombres français (1 000,00).
+    Lit plusieurs fichiers FEC, normalise les colonnes (Debit/MontantDebit) et les fusionne.
     """
     all_data = []
 
-    # Colonnes standards attendues dans un FEC (simplifié pour la démo)
-    # En réalité, les noms peuvent varier (EcritureDate vs DateEcriture, etc.)
+    # 1. On définit les variantes possibles vers le nom standard
+    # Format : 'Nom_Alternatif': 'Nom_Standard'
+    column_mapping = {
+        'MontantDebit': 'Debit',
+        'MontantCredit': 'Credit',
+        'DateEcriture': 'EcritureDate',  # Bonus : gère aussi ce cas fréquent
+        'Compte': 'CompteNum'  # Bonus : gère le cas où c'est juste "Compte"
+    }
+
+    # Colonnes standards nécessaires APRÈS renommage
     required_cols = ['EcritureDate', 'CompteNum', 'Debit', 'Credit']
 
     for file in uploaded_files:
         try:
-            # Les fichiers FEC sont souvent encodés en latin-1 ou cp1252 en France
-            # On tente de lire avec séparateur '|' ou ';'
             content = file.getvalue().decode('latin-1')
-
-            # Détection simple du séparateur
             sep = '|' if content.count('|') > content.count(';') else ';'
 
             df = pd.read_csv(
                 io.StringIO(content),
                 sep=sep,
-                decimal=',',  # Important pour le format français "120,50"
-                dtype={'CompteNum': str}  # Garder les comptes en string (ex: 401000)
+                decimal=',',
+                dtype={'CompteNum': str, 'Compte': str}  # On anticipe les deux noms
             )
 
-            # Normalisation basique des colonnes (nettoyage des espaces)
+            # A. Nettoyage des espaces dans les noms de colonnes
             df.columns = df.columns.str.strip()
 
-            # Vérification des colonnes critiques
+            # B. Renommage des colonnes (L'étape clé !)
+            # Si 'MontantDebit' existe, il devient 'Debit'. Si 'Debit' existe déjà, il reste 'Debit'.
+            df = df.rename(columns=column_mapping)
+
+            # C. Vérification des colonnes critiques (sur les noms standards)
             missing_cols = [c for c in required_cols if c not in df.columns]
             if missing_cols:
-                st.warning(f"Fichier {file.name} ignoré : colonnes manquantes {missing_cols}")
+                st.warning(f"Fichier {file.name} ignoré : colonnes manquantes {missing_cols}. (Vérifiez les en-têtes)")
                 continue
 
             # Conversion de la date
-            # Format standard FEC : Souvent YYYYMMDD ou DD/MM/YYYY
-            # On force la conversion
             df['EcritureDate'] = pd.to_datetime(df['EcritureDate'], errors='coerce')
 
             # Remplacer les NaN par 0 pour les calculs
