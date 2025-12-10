@@ -391,3 +391,26 @@ if uploaded_files:
                     st.error("Veuillez entrer une clé API dans la barre latérale.")
             else:
                 st.info("Cliquez sur le bouton pour demander à Gemini d'analyser vos chiffres et proposer des actions correctives pour votre restaurant.")
+
+# --- DIAGNOSTIC (A COLLER EN BAS DE APP.PY) ---
+# Ce code va afficher dans la sidebar la liste des modèles que VOTRE ordinateur voit.
+if api_key_input:
+    try:
+        genai.configure(api_key=api_key_input)
+        st.sidebar.markdown("---")
+        st.sidebar.warning("🔍 DIAGNOSTIC TECHNIQUE")
+        st.sidebar.write(f"Version librairie : {genai.__version__}")
+        
+        st.sidebar.write("Modèles détectés :")
+        found_models = []
+        for m in genai.list_models():
+            # On cherche les modèles capables de générer du texte
+            if 'generateContent' in m.supported_generation_methods:
+                found_models.append(m.name)
+                st.sidebar.code(m.name)
+        
+        if not found_models:
+            st.sidebar.error("Aucun modèle trouvé. Problème de clé ou de région.")
+            
+    except Exception as e:
+        st.sidebar.error(f"Erreur de connexion : {e}")
