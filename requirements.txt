@@ -4,3 +4,4 @@ plotly
 google-generativeai
 scikit-learn
 statsmodels
+matplotlib
