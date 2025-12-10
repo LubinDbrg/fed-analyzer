@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 import io
-import google.generativeai as genai  # AJOUT IMPORT GEMINI
+import google.generativeai as genai
 
 # Configuration de la page
 st.set_page_config(page_title="KPI Restauration - AI Hybride", layout="wide")
@@ -31,16 +31,16 @@ def clear_fec_cache():
 
 def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
     """
-    Fonction qui appelle Gemini pour des conseils spécialisés Restauration
+    Fonction qui appelle Gemini avec un système de secours (Fallback)
+    Si 'gemini-1.5-flash' échoue, on tente 'gemini-pro'.
     """
     if not api_key:
-        return "⚠️ Veuillez entrer votre clé API Gemini dans la barre latérale pour recevoir l'analyse."
+        return "⚠️ Veuillez entrer votre clé API Gemini dans la barre latérale."
 
     try:
         genai.configure(api_key=api_key)
-        # Utilisation de Gemini Pro ou Flash selon disponibilité
-        model = genai.GenerativeModel('gemini-1.5-flash') 
-
+        
+        # Le Prompt (Consigne) pour l'IA
         prompt = f"""
         Tu es un expert CFO spécialisé dans le secteur de la restauration (Restaurant, Bar, Brasserie).
         Analyse la situation financière suivante pour un restaurant :
@@ -67,11 +67,22 @@ def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
         Sois direct, professionnel et bienveillant.
         """
         
-        with st.spinner('🤖 L\'IA analyse vos ratios financiers...'):
-            response = model.generate_content(prompt)
-            return response.text
+        # --- TENTATIVE 1 : Modèle Rapide (Flash) ---
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            with st.spinner('🤖 Analyse AI (Mode Flash)...'):
+                response = model.generate_content(prompt)
+                return response.text
+        except Exception:
+            # --- TENTATIVE 2 : Modèle Standard (Pro) - En cas d'erreur sur le premier ---
+            # Souvent plus stable sur les anciennes versions de la librairie
+            model = genai.GenerativeModel('gemini-pro')
+            with st.spinner('🤖 Analyse AI (Mode Standard)...'):
+                response = model.generate_content(prompt)
+                return response.text
+
     except Exception as e:
-        return f"❌ Erreur lors de l'appel à Gemini : {e}"
+        return f"❌ Erreur critique Gemini : {e}. \nConseil : Essayez de mettre à jour la librairie avec 'pip install -U google-generativeai'"
 
 def add_context_to_figure(fig, start_date, end_date):
     start_ts = pd.Timestamp(start_date)
@@ -358,13 +369,12 @@ if uploaded_files:
                 if c4_btn.button("🔍 Agrandir", key="btn_tr"): show_zoomed_chart(fig_tr, "Trésorerie", global_min_date, global_max_date)
                 st.plotly_chart(fig_tr, use_container_width=True)
             
-            # --- SECTION CONSEILS GEMINI (NOUVEAU) ---
+            # --- SECTION CONSEILS GEMINI ---
             st.markdown("---")
             st.subheader("👨‍🍳 Conseils Stratégiques (IA & Restauration)")
             
             col_ai_btn, col_ai_txt = st.columns([0.2, 0.8])
             
-            # On prépare les données à envoyer
             stats_gemini = {
                 'CA': f"{last_m['CA']:,.0f}",
                 'EBITDA': f"{last_m['EBITDA']:,.0f}",
