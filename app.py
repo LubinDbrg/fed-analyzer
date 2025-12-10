@@ -7,15 +7,14 @@ from sklearn.linear_model import LinearRegression
 import io
 import google.generativeai as genai
 import re
+import zipfile
+import os
 
 # Configuration de la page
 st.set_page_config(page_title="KPI Restauration - STC", layout="wide")
 
 # --- CONFIGURATION FICHIERS & URL ---
-# URL du logo (CDN Facebook)
 LOGO_URL = "https://scontent-mrs2-3.xx.fbcdn.net/v/t1.15752-9/593989620_2217848631958856_7080388737174534799_n.png?stp=dst-png_p394x394&_nc_cat=104&ccb=1-7&_nc_sid=0024fc&_nc_ohc=Rkmg6RI2seYQ7kNvwHe0B0i&_nc_oc=AdlAv8BhqxR27G2lrlER10hKoJbxWWIaOYh_MoFdUMTGRD1co3jYPzFyucWERnVzeHM&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=scontent-mrs2-3.xx&oh=03_Q7cD4AFbWq-h_BtPiU15YRrwm39u0HJtb-bB6ujQEuOrM6JIpQ&oe=6960DB09"
-
-# Nom du fichier de conseils (doit être dans le dossier local)
 ADVICE_FILE = "conseil_entreprises.txt"
 
 # --- 0. CONFIGURATION & DONNÉES ---
@@ -35,7 +34,7 @@ EVENTS_DB = [
 
 def clear_fec_cache():
     if "fec_uploader" in st.session_state:
-        st.session_state["fec_uploader"] = []
+        st.session_state["fec_uploader"] = None
 
 def format_fr_currency(value):
     """Formate un nombre avec un POINT pour les milliers et ajoute €."""
@@ -65,9 +64,8 @@ def show_zoomed_chart(fig_base, title, start_date, end_date):
     st.plotly_chart(fig_zoom, use_container_width=True)
     st.info("Les lignes pointillées représentent les évènements extra-financiers.")
 
-# --- 2. MOTEURS DE CONSEILS (IA & FICHIER TXT) ---
+# --- 2. MOTEURS DE CONSEILS ---
 
-# --- MOTEUR 1 : IA GEMINI ---
 def get_best_available_model():
     try:
         available_models = []
@@ -110,7 +108,6 @@ def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
         if "429" in str(e): return "⚠️ Limite de quota IA atteinte. Réessayez dans une minute."
         return f"❌ Erreur technique IA : {e}"
 
-# --- MOTEUR 2 : LECTURE DU FICHIER TXT (PRÉ-GÉNÉRÉ) ---
 @st.cache_data
 def load_advice_database(filepath):
     """Lit le fichier texte et crée un dictionnaire {ID_DOSSIER: TEXTE_COMPLET}"""
@@ -132,27 +129,27 @@ def load_advice_database(filepath):
             
         return advice_db
     except Exception as e:
-        # En mode dev local, ne pas planter si le fichier est absent
-        # st.error(f"Erreur de lecture du fichier conseils : {e}") 
         return {}
 
-def get_advice_from_txt(uploaded_filename, advice_db):
-    """Cherche le conseil correspondant au fichier uploadé"""
+def get_advice_from_txt(company_name, advice_db):
+    """Cherche le conseil correspondant au nom du dossier (Entreprise)"""
     if not advice_db:
         return "❌ Base de données de conseils vide ou fichier 'conseil_entreprises.txt' introuvable."
     
     found_key = None
+    # Recherche flexible : si l'ID (ex: 000003) est présent dans le nom du dossier sélectionné
     for db_id in advice_db.keys():
-        if db_id in uploaded_filename:
+        if db_id in company_name:
             found_key = db_id
             break
             
     if found_key:
         return f"### 📄 Rapport Dossier {found_key}\n\n```text\n{advice_db[found_key]}\n```"
     else:
-        return f"⚠️ Aucun rapport pré-généré trouvé pour le fichier : `{uploaded_filename}`.\n\nAssurez-vous que l'ID du dossier (ex: 000003) est présent dans le nom du fichier."
+        return f"⚠️ Aucun rapport pré-généré trouvé pour l'entreprise : **{company_name}**.\n\nVérifiez que l'identifiant (ex: 000003) est présent dans le nom du dossier ou dans le fichier texte."
 
-# --- 3. FONCTIONS DE LECTURE & CALCULS ---
+# --- 3. FONCTIONS DE LECTURE & ZIP ---
+
 def detect_separator(line):
     if line.count(';') > line.count(','): return ';'
     if line.count('|') > line.count(';'): return '|'
@@ -181,20 +178,33 @@ def clean_financial_number(series):
     s = s.str.replace(',', '.', regex=False)
     return pd.to_numeric(s, errors='coerce').fillna(0.0)
 
-def load_fec_robust(uploaded_file):
+def load_fec_robust(file_interface):
+    """
+    Charge un fichier FEC depuis un objet fichier (BytesIO ou fichier zip ouvert)
+    """
     try:
-        bytes_data = uploaded_file.getvalue()
-        try: content = bytes_data.decode('latin-1')
-        except: content = bytes_data.decode('utf-8', errors='ignore')
+        # Lecture du contenu brut
+        if hasattr(file_interface, 'read'):
+            content_bytes = file_interface.read()
+        else:
+            content_bytes = file_interface.getvalue()
+
+        try: content = content_bytes.decode('latin-1')
+        except: content = content_bytes.decode('utf-8', errors='ignore')
+        
         first_line = content.split('\n')[0]
         sep = detect_separator(first_line)
+        
         df = pd.read_csv(io.StringIO(content), sep=sep, dtype=str)
         df = standardize_columns(df)
+        
         required = ['CompteNum', 'Debit', 'Credit']
         if not all(col in df.columns for col in required): return None
+
         df['MontantDebit'] = clean_financial_number(df['Debit'])
         df['MontantCredit'] = clean_financial_number(df['Credit'])
         df['CompteNum'] = df['CompteNum'].astype(str).str.replace(r'\D', '', regex=True)
+
         if 'EcritureDate' in df.columns:
             df['Date_Analyse'] = pd.to_datetime(df['EcritureDate'], format='%Y%m%d', errors='coerce')
             mask_nat = df['Date_Analyse'].isna()
@@ -202,8 +212,11 @@ def load_fec_robust(uploaded_file):
                 df.loc[mask_nat, 'Date_Analyse'] = pd.to_datetime(df.loc[mask_nat, 'EcritureDate'], dayfirst=True, errors='coerce')
             df = df.dropna(subset=['Date_Analyse'])
         else: return None
+
         return df
-    except: return None
+    except Exception as e:
+        # print(f"Erreur chargement FEC : {e}")
+        return None
 
 def calculer_indicateurs_mensuels(df):
     if df.empty: return pd.DataFrame()
@@ -283,21 +296,63 @@ def predict_hybrid_ca(series, months_to_predict, trend_factor=1.0):
 
 # --- 5. INTERFACE PRINCIPALE ---
 
-# AFFICHAGE LOGO VIA URL (SANS FICHIER LOCAL)
+# AFFICHAGE LOGO
 st.image(LOGO_URL, width=300)
 
 st.title("📊 Finance & Restauration : Dashboard Hybride")
 
-st.sidebar.header("Paramètres & Données")
+st.sidebar.header("📂 Données Entreprises")
 col_suppr, col_upload = st.sidebar.columns([0.2, 0.8])
-st.sidebar.button("🗑️", on_click=clear_fec_cache, help="Efface toutes les données chargées")
-uploaded_files = st.sidebar.file_uploader("Fichiers FEC (Glisser-déposer)", accept_multiple_files=True, key="fec_uploader")
+st.sidebar.button("🗑️", on_click=clear_fec_cache, help="Efface le fichier chargé")
+
+# --- NOUVEAU : CHARGEMENT DU ZIP ---
+uploaded_zip = st.sidebar.file_uploader("Charger le fichier 'FEC.zip'", type="zip", key="fec_uploader")
+
+selected_company_name = None
+all_dfs = []
+
+if uploaded_zip:
+    try:
+        with zipfile.ZipFile(uploaded_zip, "r") as z:
+            # 1. Lister tous les fichiers
+            all_files = z.namelist()
+            
+            # 2. Identifier les dossiers (Entreprises)
+            # On cherche les chemins qui ont au moins un dossier racine
+            # Ex: "000003/FEC_2024.csv" -> "000003"
+            companies = sorted(list(set([f.split('/')[0] for f in all_files if '/' in f and not f.startswith('__MACOSX')])))
+            
+            if not companies:
+                st.error("Aucun dossier d'entreprise trouvé dans le ZIP. Vérifiez la structure.")
+            else:
+                # 3. Sélecteur d'entreprise
+                selected_company_name = st.sidebar.selectbox("🏢 Choisir l'entreprise :", companies)
+                
+                # 4. Charger les fichiers de l'entreprise sélectionnée
+                if selected_company_name:
+                    st.sidebar.success(f"Dossier sélectionné : {selected_company_name}")
+                    
+                    # On filtre les fichiers qui appartiennent à ce dossier
+                    company_files = [f for f in all_files if f.startswith(selected_company_name + "/") and (f.endswith('.csv') or f.endswith('.txt'))]
+                    
+                    with st.spinner(f"Lecture des {len(company_files)} fichiers FEC pour {selected_company_name}..."):
+                        for filename in company_files:
+                            # On ouvre le fichier dans le ZIP
+                            with z.open(filename) as f:
+                                df = load_fec_robust(f)
+                                if df is not None:
+                                    all_dfs.append(df)
+
+    except zipfile.BadZipFile:
+        st.error("Le fichier chargé n'est pas un ZIP valide.")
+
+# --- SUITE DU DASHBOARD ---
+
 horizon_years = st.sidebar.slider("Horizon prédiction (années)", 1, 3, 2)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("🧠 Méthode de Conseil")
 
-# CHOIX DE LA MÉTHODE DE CONSEIL
 method_choice = st.sidebar.radio(
     "Choisir le moteur d'analyse :",
     ("🤖 IA Générative (Gemini)", "📄 Rapport Pré-généré (Fichier TXT)"),
@@ -308,7 +363,6 @@ if method_choice == "🤖 IA Générative (Gemini)":
     api_key_input = st.sidebar.text_input("Clé API Gemini", type="password")
 else:
     api_key_input = None 
-    # Chargement de la base de conseils
     advice_db = load_advice_database(ADVICE_FILE)
 
 st.sidebar.subheader("🌍 Scénario Éco (Pour Prévisions)")
@@ -320,150 +374,143 @@ choix_scenario = st.sidebar.selectbox("Tendance :", list(scenario_map.keys()))
 trend_factor = scenario_map[choix_scenario]
 
 
-if uploaded_files:
-    all_dfs = []
-    # On garde le nom du premier fichier pour la recherche de conseils
-    first_filename = uploaded_files[0].name 
-    
-    for file in uploaded_files:
-        df = load_fec_robust(file)
-        if df is not None: all_dfs.append(df)
+# --- TRAITEMENT ET AFFICHAGE SI DONNÉES PRÉSENTES ---
+if all_dfs:
+    df_global = pd.concat(all_dfs, ignore_index=True)
+    df_mensuel = calculer_indicateurs_mensuels(df_global)
+    serie_treso_jour = calculer_tresorerie_quotidienne(df_global)
 
-    if all_dfs:
-        df_global = pd.concat(all_dfs, ignore_index=True)
-        df_mensuel = calculer_indicateurs_mensuels(df_global)
-        serie_treso_jour = calculer_tresorerie_quotidienne(df_global)
+    if not df_mensuel.empty:
+        months_pred = horizon_years * 12
+        global_min_date = df_mensuel.index.min()
+        global_max_date = df_mensuel.index.max() + pd.DateOffset(months=months_pred)
 
-        if not df_mensuel.empty:
-            months_pred = horizon_years * 12
-            
-            global_min_date = df_mensuel.index.min()
-            global_max_date = df_mensuel.index.max() + pd.DateOffset(months=months_pred)
+        last_m = df_mensuel.iloc[-1]
+        last_treso = serie_treso_jour.iloc[-1] if not serie_treso_jour.empty else 0
+        
+        # KPI Cards
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("📅 CA Mensuel (Dernier Mois)", format_fr_currency(last_m['CA']))
+        c2.metric("⚡ EBITDA (Dernier Mois)", format_fr_currency(last_m['EBITDA']))
+        c3.metric("💰 Résultat Net (Dernier Mois)", format_fr_currency(last_m['Resultat']))
+        c4.metric("🏦 Trésorerie (Actuelle)", format_fr_currency(last_treso))
+        
+        st.markdown("---")
 
-            last_m = df_mensuel.iloc[-1]
-            last_treso = serie_treso_jour.iloc[-1] if not serie_treso_jour.empty else 0
-            
-            # --- KPI Cards ---
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("📅 CA Mensuel (Dernier Mois)", format_fr_currency(last_m['CA']))
-            c2.metric("⚡ EBITDA (Dernier Mois)", format_fr_currency(last_m['EBITDA']))
-            c3.metric("💰 Résultat Net (Dernier Mois)", format_fr_currency(last_m['Resultat']))
-            c4.metric("🏦 Trésorerie (Actuelle)", format_fr_currency(last_treso))
-            
-            st.markdown("---")
+        # Calcul Prédictions
+        with st.spinner('Calcul des modèles prédictifs...'):
+            pred_ca = predict_hybrid_ca(df_mensuel['CA'], months_pred, trend_factor)
+        
+        pred_ebitda = None
+        pred_result = None
+        pred_treso = None
 
-            # --- CALCUL PRÉDICTIONS ---
-            with st.spinner('Calcul des modèles prédictifs...'):
-                pred_ca = predict_hybrid_ca(df_mensuel['CA'], months_pred, trend_factor)
-            
-            pred_ebitda = None
-            pred_result = None
-            pred_treso = None
+        if pred_ca is not None:
+            last_12 = df_mensuel.iloc[-12:] if len(df_mensuel) >= 12 else df_mensuel
+            sum_ca = last_12['CA'].sum()
+            marge_ebitda = (last_12['EBITDA'].sum() / sum_ca) if sum_ca != 0 else 0
+            pred_ebitda = pred_ca * marge_ebitda
+            ecart_resultat = (last_12['EBITDA'] - last_12['Resultat']).mean()
+            pred_result = pred_ebitda - ecart_resultat
 
-            if pred_ca is not None:
-                last_12 = df_mensuel.iloc[-12:] if len(df_mensuel) >= 12 else df_mensuel
-                sum_ca = last_12['CA'].sum()
-                marge_ebitda = (last_12['EBITDA'].sum() / sum_ca) if sum_ca != 0 else 0
-                pred_ebitda = pred_ca * marge_ebitda
-                ecart_resultat = (last_12['EBITDA'] - last_12['Resultat']).mean()
-                pred_result = pred_ebitda - ecart_resultat
+            pred_treso_list = []
+            current_cash = last_treso
+            for res in pred_result:
+                current_cash += res
+                pred_treso_list.append(current_cash)
+            pred_treso = pd.Series(pred_treso_list, index=pred_ca.index)
+        else:
+            st.warning("⚠️ Historique insuffisant pour prédiction.")
 
-                pred_treso_list = []
-                current_cash = last_treso
-                for res in pred_result:
-                    current_cash += res
-                    pred_treso_list.append(current_cash)
-                pred_treso = pd.Series(pred_treso_list, index=pred_ca.index)
-            else:
-                st.warning("⚠️ Historique insuffisant pour prédiction.")
+        # Graphiques
+        fig_ca = go.Figure()
+        fig_ca.add_trace(go.Bar(x=df_mensuel.index, y=df_mensuel['CA'], name='Historique', marker_color='#1f77b4'))
+        if pred_ca is not None:
+            fig_ca.add_trace(go.Bar(x=pred_ca.index, y=pred_ca, name='Prévision AI', marker_pattern_shape='/', marker_color='#4ad3d8', opacity=0.7))
+        fig_ca.update_layout(title="Chiffre d'Affaires", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
 
-            # --- PREPARATION DES GRAPHES ---
-            fig_ca = go.Figure()
-            fig_ca.add_trace(go.Bar(x=df_mensuel.index, y=df_mensuel['CA'], name='Historique', marker_color='#1f77b4'))
-            if pred_ca is not None:
-                fig_ca.add_trace(go.Bar(x=pred_ca.index, y=pred_ca, name='Prévision AI', marker_pattern_shape='/', marker_color='#4ad3d8', opacity=0.7))
-            fig_ca.update_layout(title="Chiffre d'Affaires", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
+        fig_eb = go.Figure()
+        fig_eb.add_trace(go.Scatter(x=df_mensuel.index, y=df_mensuel['EBITDA'], mode='lines+markers', name='Historique', line=dict(color='#ff7f0e', width=3)))
+        if pred_ebitda is not None:
+            fig_eb.add_trace(go.Scatter(x=pred_ebitda.index, y=pred_ebitda, mode='lines+markers', name='Prévision', line=dict(color='#00CC96', width=4, dash='dash'), marker=dict(size=8, symbol='diamond')))
+        fig_eb.add_hline(y=0, line_color="white", line_width=1, opacity=0.3)
+        fig_eb.update_layout(title="EBITDA (Rentabilité)", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
 
-            fig_eb = go.Figure()
-            fig_eb.add_trace(go.Scatter(x=df_mensuel.index, y=df_mensuel['EBITDA'], mode='lines+markers', name='Historique', line=dict(color='#ff7f0e', width=3)))
-            if pred_ebitda is not None:
-                fig_eb.add_trace(go.Scatter(x=pred_ebitda.index, y=pred_ebitda, mode='lines+markers', name='Prévision', line=dict(color='#00CC96', width=4, dash='dash'), marker=dict(size=8, symbol='diamond')))
-            fig_eb.add_hline(y=0, line_color="white", line_width=1, opacity=0.3)
-            fig_eb.update_layout(title="EBITDA (Rentabilité)", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
+        fig_res = go.Figure()
+        colors_hist = ['#2ca02c' if v >= 0 else '#d62728' for v in df_mensuel['Resultat']]
+        fig_res.add_trace(go.Bar(x=df_mensuel.index, y=df_mensuel['Resultat'], name='Historique', marker_color=colors_hist))
+        if pred_result is not None:
+            colors_pred = ['#5cd65c' if v >= 0 else '#ff6666' for v in pred_result]
+            fig_res.add_trace(go.Bar(x=pred_result.index, y=pred_result, name='Prévision', marker_pattern_shape='x', marker_color=colors_pred, opacity=0.8))
+        fig_res.add_hline(y=0, line_color="white", line_width=1, opacity=0.3)
+        fig_res.update_layout(title="Résultat Net", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
 
-            fig_res = go.Figure()
-            colors_hist = ['#2ca02c' if v >= 0 else '#d62728' for v in df_mensuel['Resultat']]
-            fig_res.add_trace(go.Bar(x=df_mensuel.index, y=df_mensuel['Resultat'], name='Historique', marker_color=colors_hist))
-            if pred_result is not None:
-                colors_pred = ['#5cd65c' if v >= 0 else '#ff6666' for v in pred_result]
-                fig_res.add_trace(go.Bar(x=pred_result.index, y=pred_result, name='Prévision', marker_pattern_shape='x', marker_color=colors_pred, opacity=0.8))
-            fig_res.add_hline(y=0, line_color="white", line_width=1, opacity=0.3)
-            fig_res.update_layout(title="Résultat Net", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
+        fig_tr = go.Figure()
+        treso_lisse = serie_treso_jour.resample('ME').last()
+        fig_tr.add_trace(go.Scatter(x=treso_lisse.index, y=treso_lisse, mode='lines', name='Historique', fill='tozeroy', line=dict(color='#9467bd', width=2)))
+        if pred_treso is not None:
+            fig_tr.add_trace(go.Scatter(x=pred_treso.index, y=pred_treso, mode='lines', name='Prévision', fill='tonexty', line=dict(color='#D670D6', width=3, dash='dash')))
+        fig_tr.add_hline(y=0, line_color="red", line_width=1, line_dash="dot")
+        fig_tr.update_layout(title="Trésorerie", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
 
-            fig_tr = go.Figure()
-            treso_lisse = serie_treso_jour.resample('ME').last()
-            fig_tr.add_trace(go.Scatter(x=treso_lisse.index, y=treso_lisse, mode='lines', name='Historique', fill='tozeroy', line=dict(color='#9467bd', width=2)))
-            if pred_treso is not None:
-                fig_tr.add_trace(go.Scatter(x=pred_treso.index, y=pred_treso, mode='lines', name='Prévision', fill='tonexty', line=dict(color='#D670D6', width=3, dash='dash')))
-            fig_tr.add_hline(y=0, line_color="red", line_width=1, line_dash="dot")
-            fig_tr.update_layout(title="Trésorerie", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
+        # Affichage Grid Zoom
+        col1, col2 = st.columns(2)
+        with col1:
+            c1_head, c1_btn = st.columns([0.8, 0.2])
+            c1_head.write("")
+            if c1_btn.button("🔍 Agrandir", key="btn_ca"): show_zoomed_chart(fig_ca, "Chiffre d'Affaires", global_min_date, global_max_date)
+            st.plotly_chart(fig_ca, use_container_width=True)
+        with col2:
+            c2_head, c2_btn = st.columns([0.8, 0.2])
+            c2_head.write("")
+            if c2_btn.button("🔍 Agrandir", key="btn_ebitda"): show_zoomed_chart(fig_eb, "EBITDA", global_min_date, global_max_date)
+            st.plotly_chart(fig_eb, use_container_width=True)
 
-            # --- AFFICHAGE GRID AVEC BOUTONS ZOOM ---
-            col1, col2 = st.columns(2)
-            with col1:
-                c1_head, c1_btn = st.columns([0.8, 0.2])
-                c1_head.write("")
-                if c1_btn.button("🔍 Agrandir", key="btn_ca"): show_zoomed_chart(fig_ca, "Chiffre d'Affaires", global_min_date, global_max_date)
-                st.plotly_chart(fig_ca, use_container_width=True)
-            with col2:
-                c2_head, c2_btn = st.columns([0.8, 0.2])
-                c2_head.write("")
-                if c2_btn.button("🔍 Agrandir", key="btn_ebitda"): show_zoomed_chart(fig_eb, "EBITDA", global_min_date, global_max_date)
-                st.plotly_chart(fig_eb, use_container_width=True)
-
-            col3, col4 = st.columns(2)
-            with col3:
-                c3_head, c3_btn = st.columns([0.8, 0.2])
-                c3_head.write("")
-                if c3_btn.button("🔍 Agrandir", key="btn_res"): show_zoomed_chart(fig_res, "Résultat Net", global_min_date, global_max_date)
-                st.plotly_chart(fig_res, use_container_width=True)
-            with col4:
-                c4_head, c4_btn = st.columns([0.8, 0.2])
-                c4_head.write("")
-                if c4_btn.button("🔍 Agrandir", key="btn_tr"): show_zoomed_chart(fig_tr, "Trésorerie", global_min_date, global_max_date)
-                st.plotly_chart(fig_tr, use_container_width=True)
-            
-            # --- SECTION CONSEILS ---
-            st.markdown("---")
-            st.subheader(f"👨‍🍳 Conseils Stratégiques : Méthode {method_choice}")
-            
-            col_ai_btn, col_ai_txt = st.columns([0.2, 0.8])
-            
-            if col_ai_btn.button("🚀 Générer l'analyse"):
-                
-                # CAS 1 : IA Gemini
-                if method_choice == "🤖 IA Générative (Gemini)":
-                    if api_key_input:
-                        stats_gemini = {
-                            'CA': format_fr_currency(last_m['CA']),
-                            'EBITDA': format_fr_currency(last_m['EBITDA']),
-                            'Resultat': format_fr_currency(last_m['Resultat']),
-                            'Treso': format_fr_currency(last_treso)
-                        }
-                        conseils = generer_conseils_gemini(api_key_input, stats_gemini, choix_scenario)
-                        if "❌" in conseils or "⚠️" in conseils:
-                            st.warning(conseils)
-                        else:
-                            st.success("Analyse IA générée !")
-                            st.markdown(conseils)
+        col3, col4 = st.columns(2)
+        with col3:
+            c3_head, c3_btn = st.columns([0.8, 0.2])
+            c3_head.write("")
+            if c3_btn.button("🔍 Agrandir", key="btn_res"): show_zoomed_chart(fig_res, "Résultat Net", global_min_date, global_max_date)
+            st.plotly_chart(fig_res, use_container_width=True)
+        with col4:
+            c4_head, c4_btn = st.columns([0.8, 0.2])
+            c4_head.write("")
+            if c4_btn.button("🔍 Agrandir", key="btn_tr"): show_zoomed_chart(fig_tr, "Trésorerie", global_min_date, global_max_date)
+            st.plotly_chart(fig_tr, use_container_width=True)
+        
+        # Section Conseils
+        st.markdown("---")
+        st.subheader(f"👨‍🍳 Conseils Stratégiques : Méthode {method_choice}")
+        
+        col_ai_btn, col_ai_txt = st.columns([0.2, 0.8])
+        
+        if col_ai_btn.button("🚀 Générer l'analyse"):
+            if method_choice == "🤖 IA Générative (Gemini)":
+                if api_key_input:
+                    stats_gemini = {
+                        'CA': format_fr_currency(last_m['CA']),
+                        'EBITDA': format_fr_currency(last_m['EBITDA']),
+                        'Resultat': format_fr_currency(last_m['Resultat']),
+                        'Treso': format_fr_currency(last_treso)
+                    }
+                    conseils = generer_conseils_gemini(api_key_input, stats_gemini, choix_scenario)
+                    if "❌" in conseils or "⚠️" in conseils:
+                        st.warning(conseils)
                     else:
-                        st.error("Veuillez entrer une clé API Gemini pour utiliser l'IA.")
+                        st.success("Analyse IA générée !")
+                        st.markdown(conseils)
+                else:
+                    st.error("Veuillez entrer une clé API Gemini pour utiliser l'IA.")
 
-                # CAS 2 : Lecture Fichier TXT
-                elif method_choice == "📄 Rapport Pré-généré (Fichier TXT)":
-                    rapport_txt = get_advice_from_txt(first_filename, advice_db)
-                    st.success("Rapport chargé !")
-                    st.markdown(rapport_txt)
-            
-            else:
-                st.info(f"Cliquez pour lancer l'analyse avec la méthode : {method_choice}")
+            elif method_choice == "📄 Rapport Pré-généré (Fichier TXT)":
+                # Utilisation du nom de l'entreprise sélectionnée pour trouver le conseil
+                rapport_txt = get_advice_from_txt(selected_company_name, advice_db)
+                st.success(f"Rapport chargé pour {selected_company_name} !")
+                st.markdown(rapport_txt)
+        
+        else:
+            st.info(f"Cliquez pour lancer l'analyse avec la méthode : {method_choice}")
+    else:
+        st.warning("Aucune donnée valide trouvée dans les fichiers de cette entreprise.")
+elif uploaded_zip:
+    st.info("Veuillez sélectionner une entreprise dans la barre latérale.")
