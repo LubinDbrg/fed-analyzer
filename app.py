@@ -8,9 +8,9 @@ import io
 import google.generativeai as genai
 
 # Configuration de la page
-st.set_page_config(page_title="KPI Restauration - AI Hybride", layout="wide")
+st.set_page_config(page_title="KPI Restauration - STC", layout="wide")
 
-# --- 0. CONFIGURATION DES ÉVÈNEMENTS ---
+# --- 0. CONFIGURATION & DONNÉES EXPERT (Issue de Mission-3) ---
 EVENTS_DB = [
     {"date": "2021-05-19", "label": "Terrasses", "color": "#FFFF00"},
     {"date": "2021-06-09", "label": "Salles", "color": "#FFFF00"},
@@ -23,90 +23,29 @@ EVENTS_DB = [
     {"date": "2025-01-20", "label": "Tarifs Trump", "color": "#800080"},
 ]
 
-# --- 1. FONCTIONS UTILITAIRES & GEMINI ---
+# Dictionnaire PCG Expert (Adapté du script fourni)
+PCG_EXPERT = {
+    'VENTES': ['70'],
+    'ACHATS_CONSO': ['601', '602', '607'],
+    'VARIATION_STOCK': ['603'],
+    'SALAIRES_CHARGES': ['64'],
+    'ENERGIE': ['6061'],
+    'LOYER': ['613'],
+    'EBE_PROD': ['70', '71', '72', '73', '74'],
+    'EBE_CHARGE': ['60', '61', '62', '63', '64']
+}
+
+# --- 1. FONCTIONS UTILITAIRES ---
 
 def clear_fec_cache():
     if "fec_uploader" in st.session_state:
         st.session_state["fec_uploader"] = []
 
 def format_fr_currency(value):
-    """
-    Formate un nombre avec un POINT pour les milliers et ajoute le symbole €.
-    Exemple: 12345 -> '12.345 €'
-    """
-    # On formate d'abord avec la virgule standard US (12,345)
+    """Formate un nombre avec un POINT pour les milliers et ajoute €."""
     us_fmt = f"{value:,.0f}"
-    # On remplace la virgule par un point
     fr_fmt = us_fmt.replace(',', '.')
     return f"{fr_fmt} €"
-
-def get_best_available_model():
-    """
-    Parcourt les modèles disponibles et choisit le plus STABLE avec le meilleur quota.
-    Priorité absolue à '1.5-flash' (Stable).
-    """
-    try:
-        available_models = []
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                available_models.append(m.name)
-        
-        # 1. PRIORITÉ : Gemini 1.5 Flash (Standard stable)
-        for m in available_models:
-            if "gemini-1.5-flash" in m and "exp" not in m and "8b" not in m:
-                return m
-        
-        # 2. Gemini 1.5 Pro
-        for m in available_models:
-            if "gemini-1.5-pro" in m and "exp" not in m:
-                return m
-                
-        # 3. Fallback
-        for m in available_models:
-            if "flash" in m:
-                return m
-        
-        return available_models[0] if available_models else None
-    except Exception:
-        return None
-
-def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
-    if not api_key:
-        return "⚠️ Veuillez entrer votre clé API Gemini dans la barre latérale."
-
-    try:
-        genai.configure(api_key=api_key)
-        
-        model_name = get_best_available_model()
-        
-        if not model_name:
-             return "❌ Aucun modèle compatible trouvé sur cette clé API."
-
-        prompt = f"""
-        Tu es un expert CFO spécialisé dans le secteur de la restauration.
-        Analyse la situation financière suivante :
-
-        DONNÉES (Dernier Mois) :
-        - CA : {stats_dict['CA']}
-        - EBITDA : {stats_dict['EBITDA']}
-        - Résultat Net : {stats_dict['Resultat']}
-        - Trésorerie : {stats_dict['Treso']}
-        
-        CONTEXTE : Scénario {scenario_nom}
-        
-        MISSION : 3 conseils (Marge, Staff, Cash) pour un restaurateur.
-        """
-        
-        model = genai.GenerativeModel(model_name)
-        
-        with st.spinner(f'🤖 Analyse en cours avec le modèle stable : {model_name}...'):
-            response = model.generate_content(prompt)
-            return response.text
-
-    except Exception as e:
-        if "429" in str(e):
-             return "⚠️ **Limite de quota atteinte.** Le modèle est surchargé. Attendez une minute."
-        return f"❌ Erreur technique : {e}"
 
 def add_context_to_figure(fig, start_date, end_date):
     start_ts = pd.Timestamp(start_date)
@@ -130,7 +69,136 @@ def show_zoomed_chart(fig_base, title, start_date, end_date):
     st.plotly_chart(fig_zoom, use_container_width=True)
     st.info("Les lignes pointillées représentent les évènements extra-financiers.")
 
-# --- 2. FONCTIONS DE LECTURE ---
+# --- 2. MOTEURS DE CONSEILS (IA & CLASSIQUE) ---
+
+# --- MOTEUR 1 : IA GEMINI ---
+def get_best_available_model():
+    try:
+        available_models = []
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                available_models.append(m.name)
+        for m in available_models:
+            if "gemini-1.5-flash" in m and "exp" not in m: return m
+        for m in available_models:
+            if "gemini-1.5-pro" in m and "exp" not in m: return m
+        for m in available_models:
+            if "flash" in m: return m
+        return available_models[0] if available_models else None
+    except: return None
+
+def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
+    if not api_key: return "⚠️ Veuillez entrer votre clé API Gemini dans la barre latérale."
+    try:
+        genai.configure(api_key=api_key)
+        model_name = get_best_available_model()
+        if not model_name: return "❌ Aucun modèle compatible trouvé sur cette clé API."
+
+        prompt = f"""
+        Tu es un expert CFO spécialisé dans le secteur de la restauration.
+        Analyse la situation financière ACTUELLE (Dernier mois clôturé) :
+        - CA : {stats_dict['CA']}
+        - EBITDA : {stats_dict['EBITDA']}
+        - Résultat Net : {stats_dict['Resultat']}
+        - Trésorerie : {stats_dict['Treso']}
+        
+        CONTEXTE PRÉVISIONNEL : Scénario {scenario_nom}
+        
+        MISSION : Donne 3 conseils stratégiques et opérationnels précis (Marge, Staff, Cash) pour améliorer ces résultats actuels.
+        """
+        model = genai.GenerativeModel(model_name)
+        with st.spinner(f'🤖 Analyse IA en cours ({model_name})...'):
+            response = model.generate_content(prompt)
+            return response.text
+    except Exception as e:
+        if "429" in str(e): return "⚠️ Limite de quota IA atteinte. Réessayez dans une minute."
+        return f"❌ Erreur technique IA : {e}"
+
+# --- MOTEUR 2 : RÈGLES EXPERTS (CLASSIQUE - Adapté du script) ---
+def generer_conseils_classiques(df_global):
+    """
+    Analyse basée sur les ratios comptables standards du script 'mission-3'.
+    Utilise les 12 derniers mois de données pour une vision annuelle glissante.
+    """
+    if df_global.empty: return "Pas assez de données."
+
+    # On prend les 12 derniers mois pour avoir des ratios cohérents
+    max_date = df_global['Date_Analyse'].max()
+    start_date = max_date - pd.DateOffset(months=12)
+    df_last_12 = df_global[(df_global['Date_Analyse'] > start_date) & (df_global['Date_Analyse'] <= max_date)].copy()
+
+    if df_last_12.empty: return "Données insuffisantes sur les 12 derniers mois pour l'analyse classique."
+
+    # Fonction helper interne pour sommer les comptes selon le PCG Expert
+    def sum_acc_expert(df, roots, mode='solde'):
+        total = 0
+        for root in roots:
+            # Filtre sur les comptes qui commencent par la racine définie
+            mask = df['CompteNum'].str.startswith(root, na=False)
+            d = df.loc[mask, 'MontantDebit'].sum()
+            c = df.loc[mask, 'MontantCredit'].sum()
+            if mode == 'produit': total += (c - d)
+            elif mode == 'charge': total += (d - c)
+        return total
+
+    with st.spinner('🧠 Analyse des ratios comptables en cours...'):
+        # 1. Calcul des agrégats sur 12 mois glissants
+        CA_12m = sum_acc_expert(df_last_12, PCG_EXPERT['VENTES'], 'produit')
+        
+        Achats_12m = sum_acc_expert(df_last_12, PCG_EXPERT['ACHATS_CONSO'], 'charge')
+        VarStock_12m = sum_acc_expert(df_last_12, PCG_EXPERT['VARIATION_STOCK'], 'produit')
+        Conso_Matiere_12m = Achats_12m - VarStock_12m
+        
+        Masse_Sal_12m = sum_acc_expert(df_last_12, PCG_EXPERT['SALAIRES_CHARGES'], 'charge')
+        Energie_12m = sum_acc_expert(df_last_12, PCG_EXPERT['ENERGIE'], 'charge')
+
+        # 2. Calcul des ratios (%)
+        R_Matiere = (Conso_Matiere_12m / CA_12m * 100) if CA_12m > 0 else 0
+        R_Masse_Sal = (Masse_Sal_12m / CA_12m * 100) if CA_12m > 0 else 0
+        R_Energie = (Energie_12m / CA_12m * 100) if CA_12m > 0 else 0
+        Prime_Cost = R_Matiere + R_Masse_Sal
+
+        # 3. Génération des recommandations basées sur des seuils standards Restauration
+        actions = []
+        report = "### 🧠 Diagnostic Experts (Basé sur 12 mois glissants)\n\n"
+        
+        # Indicateurs clés
+        report += f"**Ratios Clés :**\n"
+        report += f"- Ratio Matière (Food & Beverage Cost) : **{R_Matiere:.1f}%**\n"
+        report += f"- Ratio Personnel (Masse Salariale) : **{R_Masse_Sal:.1f}%**\n"
+        report += f"- Prime Cost (Matière + Personnel) : **{Prime_Cost:.1f}%**\n\n"
+        report += "---\n**Recommandations Prioritaires :**\n\n"
+
+        # Règles de dérapage (Inspirées du script)
+        # Seuils standards : Matière ~30-32%, Personnel ~35-40%, Prime Cost ~70%
+        
+        if R_Matiere > 32:
+            gap = R_Matiere - 32
+            gain_potentiel = CA_12m * (gap / 100)
+            actions.append(f"⚠️ **[MARGE BRUTE] DÉRAPAGE MATIÈRE** : Votre ratio ({R_Matiere:.1f}%) est supérieur au standard (32%). Cela indique des pertes, du gaspillage ou des prix d'achat trop élevés. Gain potentiel estimé : **{format_fr_currency(gain_potentiel)}** / an.")
+        elif R_Matiere < 25 and CA_12m > 0:
+             actions.append(f"ℹ️ **[MARGE BRUTE] Ratio Matière très faible** ({R_Matiere:.1f}%). Vérifiez la qualité des produits ou si les prix de vente ne sont pas trop élevés, ce qui pourrait freiner le volume.")
+
+        if R_Masse_Sal > 40:
+            gap = R_Masse_Sal - 40
+            gain_potentiel = CA_12m * (gap / 100)
+            actions.append(f"⚠️ **[PRODUCTIVITÉ] DÉRAPAGE PERSONNEL** : La masse salariale absorbe trop de CA ({R_Masse_Sal:.1f}% vs cible 40%). Revoyez les plannings et l'efficacité opérationnelle en salle/cuisine. Gain potentiel estimé : **{format_fr_currency(gain_potentiel)}** / an.")
+
+        if Prime_Cost > 72:
+             actions.append(f"🔴 **[ALERTE RENTABILITÉ] PRIME COST CRITIQUE** : Le cumul Matière + Personnel atteint **{Prime_Cost:.1f}%**. Il est impératif de le ramener sous les 70% pour dégager une marge nette suffisante.")
+
+        if R_Energie > 5:
+             actions.append(f"⚠️ **[CHARGES] Alerte Énergie** : Vos coûts énergétiques représentent {R_Matiere:.1f}% du CA, c'est élevé pour le secteur. Audit des équipements conseillé.")
+
+        if not actions:
+            report += "✅ **Gestion saine.** Vos ratios principaux sont alignés sur les standards de la profession."
+        else:
+            for action in actions:
+                report += f"- {action}\n"
+        
+        return report
+
+# --- 3. FONCTIONS DE LECTURE & CALCULS ---
 def detect_separator(line):
     if line.count(';') > line.count(','): return ';'
     if line.count('|') > line.count(';'): return '|'
@@ -172,6 +240,7 @@ def load_fec_robust(uploaded_file):
         if not all(col in df.columns for col in required): return None
         df['MontantDebit'] = clean_financial_number(df['Debit'])
         df['MontantCredit'] = clean_financial_number(df['Credit'])
+        # Nettoyage important pour la méthode classique : on ne garde que les chiffres
         df['CompteNum'] = df['CompteNum'].astype(str).str.replace(r'\D', '', regex=True)
         if 'EcritureDate' in df.columns:
             df['Date_Analyse'] = pd.to_datetime(df['EcritureDate'], format='%Y%m%d', errors='coerce')
@@ -183,7 +252,6 @@ def load_fec_robust(uploaded_file):
         return df
     except: return None
 
-# --- 3. CALCUL DES INDICATEURS ---
 def calculer_indicateurs_mensuels(df):
     if df.empty: return pd.DataFrame()
     df = df.set_index('Date_Analyse').sort_index()
@@ -262,34 +330,35 @@ def predict_hybrid_ca(series, months_to_predict, trend_factor=1.0):
 
 # --- 5. INTERFACE PRINCIPALE ---
 
-st.sidebar.header("Paramètres")
+# AJOUT DU LOGO EN HAUT
+try:
+    st.image("image_2.png", width=300)
+except:
+    st.warning("Image 'image_2.png' introuvable. Assurez-vous qu'elle est dans le dossier de l'application.")
+
+st.title("📊 Finance & Restauration : Dashboard Hybride")
+
+st.sidebar.header("Paramètres & Données")
 col_suppr, col_upload = st.sidebar.columns([0.2, 0.8])
 st.sidebar.button("🗑️", on_click=clear_fec_cache, help="Efface toutes les données chargées")
-uploaded_files = st.sidebar.file_uploader("Fichiers FEC", accept_multiple_files=True, key="fec_uploader")
+uploaded_files = st.sidebar.file_uploader("Fichiers FEC (Glisser-déposer)", accept_multiple_files=True, key="fec_uploader")
 horizon_years = st.sidebar.slider("Horizon prédiction (années)", 1, 3, 2)
 
-# Clé API pour Gemini
 st.sidebar.markdown("---")
-st.sidebar.subheader("🤖 Intelligence Artificielle")
-api_key_input = st.sidebar.text_input("Clé API Gemini", type="password")
+st.sidebar.subheader("🧠 Méthode de Conseil")
+# CHOIX DE LA MÉTHODE DE CONSEIL
+method_choice = st.sidebar.radio(
+    "Choisir le moteur d'analyse :",
+    ("🤖 IA Générative (Gemini)", "🧠 Règles Experts (Classique STC)"),
+    index=0
+)
 
-# DIAGNOSTIC AUTOMATIQUE DES MODÈLES (DANS LA SIDEBAR)
-if api_key_input:
-    try:
-        genai.configure(api_key=api_key_input)
-        best_model = get_best_available_model()
-        if best_model:
-            # On affiche une icône verte si c'est un modèle stable (1.5)
-            if "1.5" in best_model and "exp" not in best_model:
-                st.sidebar.success(f"✅ Modèle Stable : {best_model}")
-            else:
-                st.sidebar.warning(f"⚠️ Modèle Expérimental : {best_model}")
-        else:
-            st.sidebar.error("❌ Aucun modèle compatible trouvé.")
-    except Exception as e:
-        st.sidebar.warning("Erreur connexion API (Vérifiez la clé)")
+if method_choice == "🤖 IA Générative (Gemini)":
+    api_key_input = st.sidebar.text_input("Clé API Gemini", type="password")
+else:
+    api_key_input = None # Pas besoin de clé pour la méthode classique
 
-st.sidebar.subheader("🌍 Scénario Éco")
+st.sidebar.subheader("🌍 Scénario Éco (Pour Prévisions)")
 scenario_map = {
     "Neutre": 1.0, "Optimiste (+5%)": 1.05, "Pessimiste (-5%)": 0.95,
     "Inflation (+1.5%)": 1.015
@@ -297,7 +366,6 @@ scenario_map = {
 choix_scenario = st.sidebar.selectbox("Tendance :", list(scenario_map.keys()))
 trend_factor = scenario_map[choix_scenario]
 
-st.title("📊 Finance & Restauration : Dashboard AI")
 
 if uploaded_files:
     all_dfs = []
@@ -319,12 +387,12 @@ if uploaded_files:
             last_m = df_mensuel.iloc[-1]
             last_treso = serie_treso_jour.iloc[-1] if not serie_treso_jour.empty else 0
             
-            # --- KPI Cards (AFFICHAGE MODIFIÉ AVEC POINTS ET TITRES CLAIRS) ---
+            # --- KPI Cards (TITRES CLARIFIÉS "ACTUEL") ---
             c1, c2, c3, c4 = st.columns(4)
-            c1.metric("📅 Chiffre d'Affaires (Dernier Mois)", format_fr_currency(last_m['CA']))
-            c2.metric("⚡ EBITDA (Rentabilité Opérationnelle)", format_fr_currency(last_m['EBITDA']))
-            c3.metric("💰 Résultat Net (Bénéfice)", format_fr_currency(last_m['Resultat']))
-            c4.metric("🏦 Trésorerie Disponible (Cash)", format_fr_currency(last_treso))
+            c1.metric("📅 CA Mensuel (Actuel - Dernier Mois)", format_fr_currency(last_m['CA']))
+            c2.metric("⚡ EBITDA (Actuel - Dernier Mois)", format_fr_currency(last_m['EBITDA']))
+            c3.metric("💰 Résultat Net (Actuel - Dernier Mois)", format_fr_currency(last_m['Resultat']))
+            c4.metric("🏦 Trésorerie (Actuelle - Aujourd'hui)", format_fr_currency(last_treso))
             
             st.markdown("---")
 
@@ -409,29 +477,39 @@ if uploaded_files:
                 if c4_btn.button("🔍 Agrandir", key="btn_tr"): show_zoomed_chart(fig_tr, "Trésorerie", global_min_date, global_max_date)
                 st.plotly_chart(fig_tr, use_container_width=True)
             
-            # --- SECTION CONSEILS GEMINI ---
+            # --- SECTION CONSEILS (MÉTHODE AU CHOIX) ---
             st.markdown("---")
-            st.subheader("👨‍🍳 Conseils Stratégiques (IA & Restauration)")
+            st.subheader(f"👨‍🍳 Conseils Stratégiques : Méthode {method_choice}")
             
             col_ai_btn, col_ai_txt = st.columns([0.2, 0.8])
             
-            # Formatage des chiffres pour le prompt (avec les points aussi, c'est plus propre)
-            stats_gemini = {
-                'CA': format_fr_currency(last_m['CA']),
-                'EBITDA': format_fr_currency(last_m['EBITDA']),
-                'Resultat': format_fr_currency(last_m['Resultat']),
-                'Treso': format_fr_currency(last_treso)
-            }
-
-            if col_ai_btn.button("🤖 Générer l'analyse"):
-                if api_key_input:
-                    conseils = generer_conseils_gemini(api_key_input, stats_gemini, choix_scenario)
-                    if "❌" in conseils or "⚠️" in conseils:
-                        st.warning(conseils)
+            # Bouton unique qui déclenche la méthode choisie
+            if col_ai_btn.button("🚀 Générer l'analyse"):
+                
+                # CAS 1 : Méthode IA Gemini
+                if method_choice == "🤖 IA Générative (Gemini)":
+                    if api_key_input:
+                        stats_gemini = {
+                            'CA': format_fr_currency(last_m['CA']),
+                            'EBITDA': format_fr_currency(last_m['EBITDA']),
+                            'Resultat': format_fr_currency(last_m['Resultat']),
+                            'Treso': format_fr_currency(last_treso)
+                        }
+                        conseils = generer_conseils_gemini(api_key_input, stats_gemini, choix_scenario)
+                        if "❌" in conseils or "⚠️" in conseils:
+                            st.warning(conseils)
+                        else:
+                            st.success("Analyse IA générée !")
+                            st.markdown(conseils)
                     else:
-                        st.success("Analyse générée avec succès !")
-                        st.markdown(conseils)
-                else:
-                    st.error("Veuillez entrer une clé API dans la barre latérale.")
+                        st.error("Veuillez entrer une clé API Gemini pour utiliser l'IA.")
+
+                # CAS 2 : Méthode Classique (Règles Experts)
+                elif method_choice == "🧠 Règles Experts (Classique STC)":
+                    # On passe le DataFrame global pour qu'il recalcule les ratios sur 12 mois
+                    rapport_classique = generer_conseils_classiques(df_global)
+                    st.success("Diagnostic Expert généré !")
+                    st.markdown(rapport_classique)
+            
             else:
-                st.info("Cliquez sur le bouton pour demander à Gemini d'analyser vos chiffres et proposer des actions correctives pour votre restaurant.")
+                st.info(f"Cliquez pour lancer l'analyse avec la méthode : {method_choice}")
