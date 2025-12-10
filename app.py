@@ -6,11 +6,16 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 import io
 import google.generativeai as genai
+import re
 
 # Configuration de la page
 st.set_page_config(page_title="KPI Restauration - STC", layout="wide")
 
-# --- 0. CONFIGURATION & DONNÉES EXPERT (Issue de Mission-3) ---
+# Noms des fichiers (Assurez-vous qu'ils sont dans le même dossier)
+LOGO_FILE = "593989620_2217848631958856_7080388737174534799_n.png"
+ADVICE_FILE = "conseil_entreprises.txt"
+
+# --- 0. CONFIGURATION & DONNÉES ---
 EVENTS_DB = [
     {"date": "2021-05-19", "label": "Terrasses", "color": "#FFFF00"},
     {"date": "2021-06-09", "label": "Salles", "color": "#FFFF00"},
@@ -22,18 +27,6 @@ EVENTS_DB = [
     {"date": "2024-07-26", "label": "JO Paris", "color": "#33A1FF"},
     {"date": "2025-01-20", "label": "Tarifs Trump", "color": "#800080"},
 ]
-
-# Dictionnaire PCG Expert (Adapté du script fourni)
-PCG_EXPERT = {
-    'VENTES': ['70'],
-    'ACHATS_CONSO': ['601', '602', '607'],
-    'VARIATION_STOCK': ['603'],
-    'SALAIRES_CHARGES': ['64'],
-    'ENERGIE': ['6061'],
-    'LOYER': ['613'],
-    'EBE_PROD': ['70', '71', '72', '73', '74'],
-    'EBE_CHARGE': ['60', '61', '62', '63', '64']
-}
 
 # --- 1. FONCTIONS UTILITAIRES ---
 
@@ -69,7 +62,7 @@ def show_zoomed_chart(fig_base, title, start_date, end_date):
     st.plotly_chart(fig_zoom, use_container_width=True)
     st.info("Les lignes pointillées représentent les évènements extra-financiers.")
 
-# --- 2. MOTEURS DE CONSEILS (IA & CLASSIQUE) ---
+# --- 2. MOTEURS DE CONSEILS (IA & FICHIER TXT) ---
 
 # --- MOTEUR 1 : IA GEMINI ---
 def get_best_available_model():
@@ -114,89 +107,63 @@ def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
         if "429" in str(e): return "⚠️ Limite de quota IA atteinte. Réessayez dans une minute."
         return f"❌ Erreur technique IA : {e}"
 
-# --- MOTEUR 2 : RÈGLES EXPERTS (CLASSIQUE - Adapté du script) ---
-def generer_conseils_classiques(df_global):
-    """
-    Analyse basée sur les ratios comptables standards du script 'mission-3'.
-    Utilise les 12 derniers mois de données pour une vision annuelle glissante.
-    """
-    if df_global.empty: return "Pas assez de données."
-
-    # On prend les 12 derniers mois pour avoir des ratios cohérents
-    max_date = df_global['Date_Analyse'].max()
-    start_date = max_date - pd.DateOffset(months=12)
-    df_last_12 = df_global[(df_global['Date_Analyse'] > start_date) & (df_global['Date_Analyse'] <= max_date)].copy()
-
-    if df_last_12.empty: return "Données insuffisantes sur les 12 derniers mois pour l'analyse classique."
-
-    # Fonction helper interne pour sommer les comptes selon le PCG Expert
-    def sum_acc_expert(df, roots, mode='solde'):
-        total = 0
-        for root in roots:
-            # Filtre sur les comptes qui commencent par la racine définie
-            mask = df['CompteNum'].str.startswith(root, na=False)
-            d = df.loc[mask, 'MontantDebit'].sum()
-            c = df.loc[mask, 'MontantCredit'].sum()
-            if mode == 'produit': total += (c - d)
-            elif mode == 'charge': total += (d - c)
-        return total
-
-    with st.spinner('🧠 Analyse des ratios comptables en cours...'):
-        # 1. Calcul des agrégats sur 12 mois glissants
-        CA_12m = sum_acc_expert(df_last_12, PCG_EXPERT['VENTES'], 'produit')
+# --- MOTEUR 2 : LECTURE DU FICHIER TXT (PRÉ-GÉNÉRÉ) ---
+@st.cache_data
+def load_advice_database(filepath):
+    """Lit le fichier texte et crée un dictionnaire {ID_DOSSIER: TEXTE_COMPLET}"""
+    advice_db = {}
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            content = f.read()
         
-        Achats_12m = sum_acc_expert(df_last_12, PCG_EXPERT['ACHATS_CONSO'], 'charge')
-        VarStock_12m = sum_acc_expert(df_last_12, PCG_EXPERT['VARIATION_STOCK'], 'produit')
-        Conso_Matiere_12m = Achats_12m - VarStock_12m
+        # On découpe par "DOSSIER :"
+        # Le regex cherche "DOSSIER :" suivi de l'ID
+        sections = re.split(r'(DOSSIER\s*:\s*)', content)
         
-        Masse_Sal_12m = sum_acc_expert(df_last_12, PCG_EXPERT['SALAIRES_CHARGES'], 'charge')
-        Energie_12m = sum_acc_expert(df_last_12, PCG_EXPERT['ENERGIE'], 'charge')
-
-        # 2. Calcul des ratios (%)
-        R_Matiere = (Conso_Matiere_12m / CA_12m * 100) if CA_12m > 0 else 0
-        R_Masse_Sal = (Masse_Sal_12m / CA_12m * 100) if CA_12m > 0 else 0
-        R_Energie = (Energie_12m / CA_12m * 100) if CA_12m > 0 else 0
-        Prime_Cost = R_Matiere + R_Masse_Sal
-
-        # 3. Génération des recommandations basées sur des seuils standards Restauration
-        actions = []
-        report = "### 🧠 Diagnostic Experts (Basé sur 12 mois glissants)\n\n"
+        current_id = None
         
-        # Indicateurs clés
-        report += f"**Ratios Clés :**\n"
-        report += f"- Ratio Matière (Food & Beverage Cost) : **{R_Matiere:.1f}%**\n"
-        report += f"- Ratio Personnel (Masse Salariale) : **{R_Masse_Sal:.1f}%**\n"
-        report += f"- Prime Cost (Matière + Personnel) : **{Prime_Cost:.1f}%**\n\n"
-        report += "---\n**Recommandations Prioritaires :**\n\n"
+        for i in range(1, len(sections), 2):
+            header_marker = sections[i] # "DOSSIER : "
+            body = sections[i+1] # Le reste du texte jusqu'au prochain split
+            
+            # Extraction de l'ID (ex: "000003" dans "000003  (Exercice 2025)...")
+            # On prend la première ligne du body
+            first_line = body.strip().split('\n')[0]
+            # On prend le premier mot de cette ligne comme ID
+            dossier_id = first_line.split()[0].strip()
+            
+            # On reconstruit le texte complet
+            full_text = header_marker + body
+            
+            # Nettoyage des séparateurs de fin si besoin
+            full_text = full_text.split("...................")[0]
+            
+            advice_db[dossier_id] = full_text.strip()
+            
+        return advice_db
+    except Exception as e:
+        st.error(f"Erreur de lecture du fichier conseils : {e}")
+        return {}
 
-        # Règles de dérapage (Inspirées du script)
-        # Seuils standards : Matière ~30-32%, Personnel ~35-40%, Prime Cost ~70%
-        
-        if R_Matiere > 32:
-            gap = R_Matiere - 32
-            gain_potentiel = CA_12m * (gap / 100)
-            actions.append(f"⚠️ **[MARGE BRUTE] DÉRAPAGE MATIÈRE** : Votre ratio ({R_Matiere:.1f}%) est supérieur au standard (32%). Cela indique des pertes, du gaspillage ou des prix d'achat trop élevés. Gain potentiel estimé : **{format_fr_currency(gain_potentiel)}** / an.")
-        elif R_Matiere < 25 and CA_12m > 0:
-             actions.append(f"ℹ️ **[MARGE BRUTE] Ratio Matière très faible** ({R_Matiere:.1f}%). Vérifiez la qualité des produits ou si les prix de vente ne sont pas trop élevés, ce qui pourrait freiner le volume.")
-
-        if R_Masse_Sal > 40:
-            gap = R_Masse_Sal - 40
-            gain_potentiel = CA_12m * (gap / 100)
-            actions.append(f"⚠️ **[PRODUCTIVITÉ] DÉRAPAGE PERSONNEL** : La masse salariale absorbe trop de CA ({R_Masse_Sal:.1f}% vs cible 40%). Revoyez les plannings et l'efficacité opérationnelle en salle/cuisine. Gain potentiel estimé : **{format_fr_currency(gain_potentiel)}** / an.")
-
-        if Prime_Cost > 72:
-             actions.append(f"🔴 **[ALERTE RENTABILITÉ] PRIME COST CRITIQUE** : Le cumul Matière + Personnel atteint **{Prime_Cost:.1f}%**. Il est impératif de le ramener sous les 70% pour dégager une marge nette suffisante.")
-
-        if R_Energie > 5:
-             actions.append(f"⚠️ **[CHARGES] Alerte Énergie** : Vos coûts énergétiques représentent {R_Matiere:.1f}% du CA, c'est élevé pour le secteur. Audit des équipements conseillé.")
-
-        if not actions:
-            report += "✅ **Gestion saine.** Vos ratios principaux sont alignés sur les standards de la profession."
-        else:
-            for action in actions:
-                report += f"- {action}\n"
-        
-        return report
+def get_advice_from_txt(uploaded_filename, advice_db):
+    """Cherche le conseil correspondant au fichier uploadé"""
+    if not advice_db:
+        return "❌ Base de données de conseils vide ou introuvable."
+    
+    # On essaie de trouver l'ID du dossier dans le nom du fichier
+    # Ex: Si fichier = "FEC_000003_2025.csv", on cherche si "000003" est une clé
+    found_key = None
+    
+    # Méthode 1 : Correspondance exacte ou partielle
+    for db_id in advice_db.keys():
+        if db_id in uploaded_filename:
+            found_key = db_id
+            break
+            
+    if found_key:
+        return f"### 📄 Rapport Dossier {found_key}\n\n```text\n{advice_db[found_key]}\n```"
+    else:
+        return f"⚠️ Aucun rapport pré-généré trouvé pour le fichier : `{uploaded_filename}`.\n\nAssurez-vous que l'ID du dossier (ex: 000003) est présent dans le nom du fichier."
 
 # --- 3. FONCTIONS DE LECTURE & CALCULS ---
 def detect_separator(line):
@@ -240,7 +207,6 @@ def load_fec_robust(uploaded_file):
         if not all(col in df.columns for col in required): return None
         df['MontantDebit'] = clean_financial_number(df['Debit'])
         df['MontantCredit'] = clean_financial_number(df['Credit'])
-        # Nettoyage important pour la méthode classique : on ne garde que les chiffres
         df['CompteNum'] = df['CompteNum'].astype(str).str.replace(r'\D', '', regex=True)
         if 'EcritureDate' in df.columns:
             df['Date_Analyse'] = pd.to_datetime(df['EcritureDate'], format='%Y%m%d', errors='coerce')
@@ -330,11 +296,11 @@ def predict_hybrid_ca(series, months_to_predict, trend_factor=1.0):
 
 # --- 5. INTERFACE PRINCIPALE ---
 
-# AJOUT DU LOGO EN HAUT
+# AJOUT DU LOGO EN HAUT (NOUVEAU FICHIER)
 try:
-    st.image("image_2.png", width=300)
+    st.image(LOGO_FILE, width=300)
 except:
-    st.warning("Image 'image_2.png' introuvable. Assurez-vous qu'elle est dans le dossier de l'application.")
+    st.warning(f"Image '{LOGO_FILE}' introuvable.")
 
 st.title("📊 Finance & Restauration : Dashboard Hybride")
 
@@ -346,17 +312,20 @@ horizon_years = st.sidebar.slider("Horizon prédiction (années)", 1, 3, 2)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("🧠 Méthode de Conseil")
-# CHOIX DE LA MÉTHODE DE CONSEIL
+
+# CHOIX DE LA MÉTHODE DE CONSEIL (MODIFIÉ)
 method_choice = st.sidebar.radio(
     "Choisir le moteur d'analyse :",
-    ("🤖 IA Générative (Gemini)", "🧠 Règles Experts (Classique STC)"),
+    ("🤖 IA Générative (Gemini)", "📄 Rapport Pré-généré (Fichier TXT)"),
     index=0
 )
 
 if method_choice == "🤖 IA Générative (Gemini)":
     api_key_input = st.sidebar.text_input("Clé API Gemini", type="password")
 else:
-    api_key_input = None # Pas besoin de clé pour la méthode classique
+    api_key_input = None 
+    # Pré-chargement de la base de conseils
+    advice_db = load_advice_database(ADVICE_FILE)
 
 st.sidebar.subheader("🌍 Scénario Éco (Pour Prévisions)")
 scenario_map = {
@@ -369,6 +338,9 @@ trend_factor = scenario_map[choix_scenario]
 
 if uploaded_files:
     all_dfs = []
+    # On garde le nom du premier fichier pour la recherche de conseils
+    first_filename = uploaded_files[0].name 
+    
     for file in uploaded_files:
         df = load_fec_robust(file)
         if df is not None: all_dfs.append(df)
@@ -387,12 +359,12 @@ if uploaded_files:
             last_m = df_mensuel.iloc[-1]
             last_treso = serie_treso_jour.iloc[-1] if not serie_treso_jour.empty else 0
             
-            # --- KPI Cards (TITRES CLARIFIÉS "ACTUEL") ---
+            # --- KPI Cards (TITRES MODIFIÉS) ---
             c1, c2, c3, c4 = st.columns(4)
-            c1.metric("📅 CA Mensuel (Actuel - Dernier Mois)", format_fr_currency(last_m['CA']))
-            c2.metric("⚡ EBITDA (Actuel - Dernier Mois)", format_fr_currency(last_m['EBITDA']))
-            c3.metric("💰 Résultat Net (Actuel - Dernier Mois)", format_fr_currency(last_m['Resultat']))
-            c4.metric("🏦 Trésorerie (Actuelle - Aujourd'hui)", format_fr_currency(last_treso))
+            c1.metric("📅 CA Mensuel (Dernier Mois)", format_fr_currency(last_m['CA']))
+            c2.metric("⚡ EBITDA (Dernier Mois)", format_fr_currency(last_m['EBITDA']))
+            c3.metric("💰 Résultat Net (Dernier Mois)", format_fr_currency(last_m['Resultat']))
+            c4.metric("🏦 Trésorerie (Actuelle)", format_fr_currency(last_treso))
             
             st.markdown("---")
 
@@ -483,7 +455,6 @@ if uploaded_files:
             
             col_ai_btn, col_ai_txt = st.columns([0.2, 0.8])
             
-            # Bouton unique qui déclenche la méthode choisie
             if col_ai_btn.button("🚀 Générer l'analyse"):
                 
                 # CAS 1 : Méthode IA Gemini
@@ -504,12 +475,12 @@ if uploaded_files:
                     else:
                         st.error("Veuillez entrer une clé API Gemini pour utiliser l'IA.")
 
-                # CAS 2 : Méthode Classique (Règles Experts)
-                elif method_choice == "🧠 Règles Experts (Classique STC)":
-                    # On passe le DataFrame global pour qu'il recalcule les ratios sur 12 mois
-                    rapport_classique = generer_conseils_classiques(df_global)
-                    st.success("Diagnostic Expert généré !")
-                    st.markdown(rapport_classique)
+                # CAS 2 : Lecture Fichier TXT (NOUVEAU)
+                elif method_choice == "📄 Rapport Pré-généré (Fichier TXT)":
+                    # On cherche le conseil correspondant au nom du fichier uploadé
+                    rapport_txt = get_advice_from_txt(first_filename, advice_db)
+                    st.success("Rapport chargé !")
+                    st.markdown(rapport_txt)
             
             else:
                 st.info(f"Cliquez pour lancer l'analyse avec la méthode : {method_choice}")
