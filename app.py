@@ -23,7 +23,7 @@ EVENTS_DB = [
     {"date": "2025-01-20", "label": "Tarifs Trump", "color": "#800080"},
 ]
 
-# --- 1. FONCTIONS UTILITAIRES & GEMINI (INTELLIGENT) ---
+# --- 1. FONCTIONS UTILITAIRES & GEMINI (CORRIGÉ & STABILISÉ) ---
 
 def clear_fec_cache():
     if "fec_uploader" in st.session_state:
@@ -31,8 +31,8 @@ def clear_fec_cache():
 
 def get_best_available_model():
     """
-    Parcourt les modèles disponibles pour l'utilisateur et choisit le meilleur automatiquement.
-    Priorité : Modèles 'Flash' (Rapides) > Modèles 'Pro' > Autres
+    Parcourt les modèles disponibles et choisit le plus STABLE avec le meilleur quota.
+    CORRECTION : Priorité absolue à '1.5-flash' (Stable) sur les versions 'exp' (Limitées).
     """
     try:
         available_models = []
@@ -40,22 +40,23 @@ def get_best_available_model():
             if 'generateContent' in m.supported_generation_methods:
                 available_models.append(m.name)
         
-        # 1. Chercher le modèle Flash 2.0 ou Expérimental (Le plus récent)
+        # 1. PRIORITÉ ABSOLUE : Gemini 1.5 Flash (Le standard stable avec haut quota)
+        # On cherche exactement "gemini-1.5-flash" ou une variante stable
         for m in available_models:
-            if "2.0-flash" in m or "exp" in m:
+            if "gemini-1.5-flash" in m and "exp" not in m and "8b" not in m:
                 return m
         
-        # 2. Chercher le modèle Flash 1.5
+        # 2. Si pas trouvé, on cherche Gemini 1.5 Pro (Plus puissant, moins de quota)
         for m in available_models:
-            if "1.5-flash" in m:
+            if "gemini-1.5-pro" in m and "exp" not in m:
                 return m
                 
-        # 3. Chercher le modèle Pro
+        # 3. En dernier recours, les modèles expérimentaux (2.0, etc.)
+        # C'est eux qui causaient l'erreur 429 car leurs quotas sont faibles
         for m in available_models:
-            if "pro" in m:
+            if "flash" in m:
                 return m
         
-        # 4. Sinon le premier disponible
         return available_models[0] if available_models else None
     except Exception:
         return None
@@ -67,7 +68,7 @@ def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
     try:
         genai.configure(api_key=api_key)
         
-        # Sélection automatique du modèle
+        # Sélection automatique du modèle (Version Corrigée)
         model_name = get_best_available_model()
         
         if not model_name:
@@ -91,11 +92,14 @@ def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
         
         model = genai.GenerativeModel(model_name)
         
-        with st.spinner(f'🤖 Analyse en cours avec le modèle : {model_name}...'):
+        with st.spinner(f'🤖 Analyse en cours avec le modèle stable : {model_name}...'):
             response = model.generate_content(prompt)
             return response.text
 
     except Exception as e:
+        # Gestion propre de l'erreur 429 (Quota)
+        if "429" in str(e):
+             return "⚠️ **Limite de quota atteinte.** Le modèle est surchargé ou vous avez dépassé le quota gratuit (15 req/min). Attendez une minute et réessayez."
         return f"❌ Erreur technique : {e}"
 
 def add_context_to_figure(fig, start_date, end_date):
@@ -269,7 +273,11 @@ if api_key_input:
         genai.configure(api_key=api_key_input)
         best_model = get_best_available_model()
         if best_model:
-            st.sidebar.success(f"✅ Modèle détecté : {best_model}")
+            # On affiche une icône verte si c'est un modèle stable (1.5)
+            if "1.5" in best_model and "exp" not in best_model:
+                st.sidebar.success(f"✅ Modèle Stable : {best_model}")
+            else:
+                st.sidebar.warning(f"⚠️ Modèle Expérimental : {best_model}")
         else:
             st.sidebar.error("❌ Aucun modèle compatible trouvé.")
     except Exception as e:
@@ -411,8 +419,8 @@ if uploaded_files:
             if col_ai_btn.button("🤖 Générer l'analyse"):
                 if api_key_input:
                     conseils = generer_conseils_gemini(api_key_input, stats_gemini, choix_scenario)
-                    if "❌" in conseils:
-                        st.error(conseils)
+                    if "❌" in conseils or "⚠️" in conseils:
+                        st.warning(conseils)
                     else:
                         st.success("Analyse générée avec succès !")
                         st.markdown(conseils)
