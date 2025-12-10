@@ -1,0 +1,723 @@
+====================================================================================================
+STC OMNISCIENT V9.0 - AUDIT STRATÉGIQUE & TEMPOREL (30 Dossiers)
+====================================================================================================
+
+DOSSIER : 000003  (Exercice 2025)
+ACTIVITÉ: 35,299 € ↘️ -46.0%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 80/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 20,935 € (59.3%) ↘️ -58.1%
+     E.B.E.      : 7,647 € (21.7%) ↘️ -73.8%
+     Résultat Net: 7,647 € ↘️ -73.5%
+     ⚠️ ALERTE TENDANCE: L'EBE s'est dégradé de -21,547 € en un an.
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 40.7% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↗️ +72.5%
+     Salaires     : 0.0% (Cible 17.6%) ✅  Trend:   
+     Énergie      : 8.1% (Cible 3.2%) ⚠️ A SURVEILLER  Trend: ↗️ +64.6%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 2,025 €
+     Dette Nette : -2,025 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [MARGE] Casser les coûts matière : Vous êtes 15.6 pts au dessus du marché. Gain potentiel: 5,522 €.
+     👉 [COUTS] Alerte Énergie : Vos coûts sont 2.5x supérieurs à la norme.
+
+....................................................................................................
+
+DOSSIER : 000011  (Exercice 2025)
+ACTIVITÉ: 7,200 € ↘️ -88.7%  |  CLUSTER: Type 0
+SANTÉ   : 🟠 FRAGILE (Score: 60/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 7,200 € (100.0%) ↘️ -88.7%
+     E.B.E.      : -11,890 € (-165.1%) ↗️ +65.2%
+     Résultat Net: -11,890 € ↗️ +65.2%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 0.0% (Cible 25.0%) ✅  Trend:   
+     Salaires     : 199.6% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↗️ +105.5%
+     Énergie      : 4.0% (Cible 3.2%) ✅  Trend: ↘️ -15.0%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : -1,197 €
+     Dette Nette : 1,197 €
+     >>> TENSION: Découvert bancaire utilisé.
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [URGENT] STOPPER LES PERTES : Votre modèle perd 11,890 €/an avant même de payer la dette. Audit prix/volume urgent.
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 13,107 €.
+
+....................................................................................................
+
+DOSSIER : 000019  (Exercice 2025)
+ACTIVITÉ: 251,256 € ↘️ -4.1%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 90/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 155,849 € (62.0%) ↘️ -5.7%
+     E.B.E.      : 68,862 € (27.4%) ↗️ +99.8%
+     Résultat Net: 68,862 € ↗️ +222.2%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 38.0% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↗️ +2.8%
+     Salaires     : 11.9% (Cible 17.6%) ✅  Trend: ↘️ -33.2%
+     Énergie      : 1.3% (Cible 3.2%) ✅  Trend: ↘️ -2.7%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 6,678 €
+     Dette Nette : 4,392 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [MARGE] Casser les coûts matière : Vous êtes 12.9 pts au dessus du marché. Gain potentiel: 32,471 €.
+
+....................................................................................................
+
+DOSSIER : 000044  (Exercice 2025)
+ACTIVITÉ: 47,144 € ↘️ -64.0%  |  CLUSTER: Type 0
+SANTÉ   : 🟠 FRAGILE (Score: 60/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : -53,199 € (-112.8%) ↘️ -171.7%
+     E.B.E.      : -76,277 € (-161.8%) ↘️ -543.3%
+     Résultat Net: -76,277 € ↘️ -1158.5%
+     ⚠️ ALERTE TENDANCE: L'EBE s'est dégradé de -93,483 € en un an.
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 212.8% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↗️ +391.9%
+     Salaires     : 1.6% (Cible 17.6%) ✅  Trend: ↘️ -65.3%
+     Énergie      : 7.2% (Cible 3.2%) ⚠️ A SURVEILLER  Trend: ↘️ -8.2%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 17,348 €
+     Dette Nette : -17,466 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [URGENT] STOPPER LES PERTES : Votre modèle perd 76,277 €/an avant même de payer la dette. Audit prix/volume urgent.
+     👉 [MARGE] Casser les coûts matière : Vous êtes 187.8 pts au dessus du marché. Gain potentiel: 88,535 €.
+     👉 [COUTS] Alerte Énergie : Vos coûts sont 2.2x supérieurs à la norme.
+
+....................................................................................................
+
+DOSSIER : 000062  (Exercice 2025)
+ACTIVITÉ: 76,771 € ↘️ -54.3%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 70/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 62,758 € (81.7%) ↘️ -50.5%
+     E.B.E.      : 17,028 € (22.2%) ↘️ -66.5%
+     Résultat Net: 13,864 € ↘️ -70.7%
+     ⚠️ ALERTE TENDANCE: L'EBE s'est dégradé de -33,757 € en un an.
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 18.3% (Cible 25.0%) ✅  Trend: ↘️ -25.7%
+     Salaires     : 25.4% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↗️ +143.8%
+     Énergie      : 3.3% (Cible 3.2%) ✅  Trend: ↗️ +14.2%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : -7,252 €
+     Dette Nette : 2,949 €
+     >>> TENSION: Découvert bancaire utilisé.
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 6,035 €.
+
+....................................................................................................
+
+DOSSIER : 000064  (Exercice 2025)
+ACTIVITÉ: 262,632 € ↘️ -10.2%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 90/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 191,714 € (73.0%) ➡️ stable
+     E.B.E.      : 72,967 € (27.8%) ↗️ +189.4%
+     Résultat Net: 72,933 € ↗️ +1041.2%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 27.0% (Cible 25.0%) ✅  Trend: ↘️ -21.8%
+     Salaires     : 36.3% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↘️ -23.4%
+     Énergie      : 0.9% (Cible 3.2%) ✅  Trend: ↘️ -51.1%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 8,742 €
+     Dette Nette : -30,948 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 49,324 €.
+
+....................................................................................................
+
+DOSSIER : 000068  (Exercice 2025)
+ACTIVITÉ: 172,529 € ➡️ stable  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 90/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 113,096 € (65.6%) ➡️ stable
+     E.B.E.      : 32,435 € (18.8%) ↗️ +52.4%
+     Résultat Net: 32,431 € ↗️ +138.7%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 34.4% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↘️ -4.6%
+     Salaires     : 25.4% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↘️ -8.9%
+     Énergie      : 1.2% (Cible 3.2%) ✅  Trend: ↗️ +6.3%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 13,981 €
+     Dette Nette : -11,195 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [MARGE] Casser les coûts matière : Vous êtes 9.4 pts au dessus du marché. Gain potentiel: 16,217 €.
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 13,473 €.
+
+....................................................................................................
+
+DOSSIER : 000077  (Exercice 2025)
+ACTIVITÉ: 198,763 € ↘️ -22.6%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 80/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 132,852 € (66.8%) ↘️ -24.0%
+     E.B.E.      : 19,640 € (9.9%) ↘️ -25.4%
+     Résultat Net: 19,640 € ↗️ +57.0%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 33.2% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↗️ +3.8%
+     Salaires     : 31.9% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↘️ -14.1%
+     Énergie      : 2.8% (Cible 3.2%) ✅  Trend: ↗️ +10.7%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 32,839 €
+     Dette Nette : 22,724 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [MARGE] Casser les coûts matière : Vous êtes 8.1 pts au dessus du marché. Gain potentiel: 16,124 €.
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 28,401 €.
+
+....................................................................................................
+
+DOSSIER : 000093  (Exercice 2025)
+ACTIVITÉ: 545,271 € ↘️ -33.0%  |  CLUSTER: Type 0
+SANTÉ   : 🟠 FRAGILE (Score: 60/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 497,539 € (91.2%) ↘️ -17.0%
+     E.B.E.      : -6,800 € (-1.2%) ↘️ -104.3%
+     Résultat Net: -7,489 € ↘️ -105.0%
+     ⚠️ ALERTE TENDANCE: L'EBE s'est dégradé de -165,312 € en un an.
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 8.8% (Cible 25.0%) ✅  Trend: ↘️ -66.8%
+     Salaires     : 78.7% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↗️ +102.0%
+     Énergie      : 1.5% (Cible 3.2%) ✅  Trend: ➡️ stable
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 101,526 €
+     Dette Nette : -65,308 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [URGENT] STOPPER LES PERTES : Votre modèle perd 6,800 €/an avant même de payer la dette. Audit prix/volume urgent.
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 333,264 €.
+
+....................................................................................................
+
+DOSSIER : 000111  (Exercice 2025)
+ACTIVITÉ: 45 € ↘️ -99.9%  |  CLUSTER: Type 2
+SANTÉ   : 🟠 FRAGILE (Score: 60/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : -10,665 € (-23700.2%) ↘️ -142.2%
+     E.B.E.      : -14,827 € (-32949.8%) ↘️ -18.0%
+     Résultat Net: -14,844 € ↘️ -2.9%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 23800.2% (Cible 23800.2%) ✅  Trend: ↗️ +44304.3%
+     Salaires     : 0.0% (Cible 0.0%) ✅  Trend: ↘️ -100.0%
+     Énergie      : -866.7% (Cible -866.7%) ✅  Trend: ↘️ -6138.0%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 2,388 €
+     Dette Nette : -5,094 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [URGENT] STOPPER LES PERTES : Votre modèle perd 14,827 €/an avant même de payer la dette. Audit prix/volume urgent.
+     👉 [COUTS] Alerte Énergie : Vos coûts sont 1.0x supérieurs à la norme.
+
+....................................................................................................
+
+DOSSIER : 000162  (Exercice 2024)
+ACTIVITÉ: 122,484 € ↗️ +17.8%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 90/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 100,076 € (81.7%) ↗️ +22.5%
+     E.B.E.      : 4,249 € (3.5%) ↗️ +972.9%
+     Résultat Net: 2,296 € ↗️ +191.7%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 18.3% (Cible 25.0%) ✅  Trend: ↘️ -14.5%
+     Salaires     : 46.3% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↗️ +19.5%
+     Énergie      : 4.5% (Cible 3.2%) ✅  Trend: ↗️ +13.2%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 61,832 €
+     Dette Nette : -48,617 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 35,141 €.
+
+....................................................................................................
+
+DOSSIER : 000170  (Exercice 2025)
+ACTIVITÉ: 0 € ↘️ -100.0%  |  CLUSTER: Type 0
+SANTÉ   : 🟠 FRAGILE (Score: 60/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : -12,573 € (-inf%) ↘️ -221.9%
+     E.B.E.      : -22,245 € (-inf%) ↘️ -65.4%
+     Résultat Net: -22,245 € ↘️ -45.8%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 0.0% (Cible 25.0%) ✅  Trend: ↘️ -100.0%
+     Salaires     : 0.0% (Cible 17.6%) ✅  Trend:   
+     Énergie      : 0.0% (Cible 3.2%) ✅  Trend: ↘️ -100.0%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 536 €
+     Dette Nette : -536 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [URGENT] STOPPER LES PERTES : Votre modèle perd 22,245 €/an avant même de payer la dette. Audit prix/volume urgent.
+
+....................................................................................................
+
+DOSSIER : 000188  (Exercice 2025)
+ACTIVITÉ: 81,522 € ↘️ -33.4%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 70/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 28,865 € (35.4%) ↘️ -41.0%
+     E.B.E.      : -8,901 € (-10.9%) ↗️ +59.4%
+     Résultat Net: -8,901 € ↗️ +61.6%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 64.6% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↗️ +7.6%
+     Salaires     : 30.0% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↘️ -19.4%
+     Énergie      : 1.2% (Cible 3.2%) ✅  Trend: ↘️ -54.1%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 34,374 €
+     Dette Nette : -34,374 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [URGENT] STOPPER LES PERTES : Votre modèle perd 8,901 €/an avant même de payer la dette. Audit prix/volume urgent.
+     👉 [MARGE] Casser les coûts matière : Vous êtes 39.5 pts au dessus du marché. Gain potentiel: 32,237 €.
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 10,129 €.
+
+....................................................................................................
+
+DOSSIER : 000191  (Exercice 2025)
+ACTIVITÉ: 495,956 € ↘️ -22.8%  |  CLUSTER: Type 0
+SANTÉ   : 🟠 FRAGILE (Score: 50/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 248,720 € (50.1%) ↘️ -36.7%
+     E.B.E.      : -21,139 € (-4.3%) ↘️ -124.5%
+     Résultat Net: -28,918 € ↘️ -135.5%
+     ⚠️ ALERTE TENDANCE: L'EBE s'est dégradé de -107,426 € en un an.
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 49.9% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↗️ +28.4%
+     Salaires     : 32.2% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↗️ +49.3%
+     Énergie      : 1.6% (Cible 3.2%) ✅  Trend: ↘️ -10.5%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : -19,930 €
+     Dette Nette : 19,930 €
+     >>> TENSION: Découvert bancaire utilisé.
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [URGENT] STOPPER LES PERTES : Votre modèle perd 21,139 €/an avant même de payer la dette. Audit prix/volume urgent.
+     👉 [MARGE] Casser les coûts matière : Vous êtes 24.8 pts au dessus du marché. Gain potentiel: 123,006 €.
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 72,477 €.
+
+....................................................................................................
+
+DOSSIER : 000200  (Exercice 2025)
+ACTIVITÉ: 116,523 € ↘️ -70.7%  |  CLUSTER: Type 0
+SANTÉ   : 🟠 FRAGILE (Score: 60/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 46,688 € (40.1%) ↘️ -81.1%
+     E.B.E.      : -5,873 € (-5.0%) ↘️ -168.3%
+     Résultat Net: -5,873 € ↗️ +67.6%
+     ⚠️ ALERTE TENDANCE: L'EBE s'est dégradé de -14,470 € en un an.
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 59.9% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↗️ +57.5%
+     Salaires     : 23.2% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↘️ -40.7%
+     Énergie      : 4.7% (Cible 3.2%) ✅  Trend: ↗️ +49.0%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 11,354 €
+     Dette Nette : -11,354 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [URGENT] STOPPER LES PERTES : Votre modèle perd 5,873 €/an avant même de payer la dette. Audit prix/volume urgent.
+     👉 [MARGE] Casser les coûts matière : Vous êtes 34.9 pts au dessus du marché. Gain potentiel: 40,648 €.
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 6,548 €.
+
+....................................................................................................
+
+DOSSIER : 000221  (Exercice 2025)
+ACTIVITÉ: 74,605 € ↘️ -56.0%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 80/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 49,193 € (65.9%) ↘️ -48.7%
+     E.B.E.      : 7,140 € (9.6%) ↘️ -14.0%
+     Résultat Net: 2,665 € ↗️ +20.7%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 34.1% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↘️ -21.6%
+     Salaires     : 33.6% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↗️ +52.0%
+     Énergie      : 0.9% (Cible 3.2%) ✅  Trend: ↘️ -85.9%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 4,923 €
+     Dette Nette : -9,162 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [MARGE] Casser les coûts matière : Vous êtes 9.0 pts au dessus du marché. Gain potentiel: 6,725 €.
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 11,937 €.
+
+....................................................................................................
+
+DOSSIER : 000225  (Exercice 2025)
+ACTIVITÉ: 189,892 € ↘️ -11.4%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 80/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 114,307 € (60.2%) ↘️ -14.9%
+     E.B.E.      : 14,623 € (7.7%) ↗️ +18.9%
+     Résultat Net: 9,631 € ↗️ +2.6%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 39.8% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↗️ +6.7%
+     Salaires     : 35.5% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↗️ +4.3%
+     Énergie      : 3.1% (Cible 3.2%) ✅  Trend: ↘️ -4.0%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : -2,623 €
+     Dette Nette : 2,623 €
+     >>> TENSION: Découvert bancaire utilisé.
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [MARGE] Casser les coûts matière : Vous êtes 14.8 pts au dessus du marché. Gain potentiel: 28,020 €.
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 34,044 €.
+
+....................................................................................................
+
+DOSSIER : 000251  (Exercice 2025)
+ACTIVITÉ: 33,324 € ↗️ +36.1%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 90/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 25,643 € (77.0%) ↗️ +46.6%
+     E.B.E.      : 11,661 € (35.0%) ↗️ +143.1%
+     Résultat Net: 11,761 € ↗️ +123.8%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 23.0% (Cible 25.0%) ✅  Trend: ↘️ -19.3%
+     Salaires     : 17.6% (Cible 17.6%) ✅  Trend: ↘️ -82.3%
+     Énergie      : 0.8% (Cible 3.2%) ✅  Trend: ↘️ -69.2%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 1,279 €
+     Dette Nette : 42,604 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     >> Félicitations. Gestion saine et alignée sur les standards.
+
+....................................................................................................
+
+DOSSIER : 000271  (Exercice 2025)
+ACTIVITÉ: 164,241 € ↗️ +271.1%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 90/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 87,546 € (53.3%) ↗️ +278.1%
+     E.B.E.      : 14,059 € (8.6%) ↗️ +83.8%
+     Résultat Net: 7,725 € ➡️ stable
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 46.7% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↘️ -2.1%
+     Salaires     : 21.4% (Cible 17.6%) ⚠️ A SURVEILLER  Trend: ↗️ +35.6%
+     Énergie      : 0.0% (Cible 3.2%) ✅  Trend:   
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 14,554 €
+     Dette Nette : 776 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [MARGE] Casser les coûts matière : Vous êtes 21.6 pts au dessus du marché. Gain potentiel: 35,556 €.
+
+....................................................................................................
+
+DOSSIER : 000299  (Exercice 2025)
+ACTIVITÉ: 334,999 € ↗️ +26.6%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 80/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 249,689 € (74.5%) ↗️ +60.1%
+     E.B.E.      : 52,031 € (15.5%) ↗️ +1211.9%
+     Résultat Net: 52,031 € ↗️ +749.4%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 25.5% (Cible 25.0%) ✅  Trend: ↘️ -37.9%
+     Salaires     : 23.8% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ➡️ stable
+     Énergie      : 4.0% (Cible 3.2%) ✅  Trend: ↘️ -17.2%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : -4,050 €
+     Dette Nette : 4,050 €
+     >>> TENSION: Découvert bancaire utilisé.
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 20,945 €.
+
+....................................................................................................
+
+DOSSIER : 017313  (Exercice 2025)
+ACTIVITÉ: 319,086 € ➡️ stable  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 90/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 228,710 € (71.7%) ➡️ stable
+     E.B.E.      : 96,637 € (30.3%) ↗️ +2120.5%
+     Résultat Net: 96,637 € ↗️ +1417.6%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 28.3% (Cible 25.0%) ⚠️ A SURVEILLER  Trend: ↘️ -3.8%
+     Salaires     : 24.2% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↘️ -40.4%
+     Énergie      : 5.4% (Cible 3.2%) ⚠️ A SURVEILLER  Trend: ↘️ -18.8%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 16,812 €
+     Dette Nette : 21,419 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 21,268 €.
+     👉 [COUTS] Alerte Énergie : Vos coûts sont 1.7x supérieurs à la norme.
+
+....................................................................................................
+
+DOSSIER : 017463  (Exercice 2025)
+ACTIVITÉ: 1,005,238 € ↘️ -30.1%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 80/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 739,864 € (73.6%) ↘️ -30.2%
+     E.B.E.      : 220,200 € (21.9%) ↘️ -30.1%
+     Résultat Net: 220,267 € ↘️ -19.5%
+     ⚠️ ALERTE TENDANCE: L'EBE s'est dégradé de -94,915 € en un an.
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 26.4% (Cible 25.0%) ✅  Trend: ➡️ stable
+     Salaires     : 25.7% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↘️ -6.6%
+     Énergie      : 2.5% (Cible 3.2%) ✅  Trend: ↘️ -3.6%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 64,542 €
+     Dette Nette : -11,737 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 82,168 €.
+
+....................................................................................................
+
+DOSSIER : 018292  (Exercice 2025)
+ACTIVITÉ: 8,002,227 € ↗️ +8.6%  |  CLUSTER: Type 1
+SANTÉ   : 🟢 ROBUSTE (Score: 80/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 3,787,516 € (47.3%) ↗️ +10.7%
+     E.B.E.      : 1,031,866 € (12.9%) ➡️ stable
+     Résultat Net: 932,396 € ➡️ stable
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 52.7% (Cible 52.7%) ✅  Trend: ➡️ stable
+     Salaires     : 22.9% (Cible 22.9%) ✅  Trend: ➡️ stable
+     Énergie      : 2.1% (Cible 2.1%) ✅  Trend: ↘️ -2.8%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 307,890 €
+     Dette Nette : -307,890 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     >> Félicitations. Gestion saine et alignée sur les standards.
+
+....................................................................................................
+
+DOSSIER : 018302  (Exercice 2024)
+ACTIVITÉ: 377,141 € ↗️ +22.4%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 90/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 265,811 € (70.5%) ↗️ +24.4%
+     E.B.E.      : 21,020 € (5.6%) ↗️ +320.9%
+     Résultat Net: 18,439 € ↗️ +252.4%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 29.5% (Cible 25.0%) ⚠️ A SURVEILLER  Trend: ↘️ -3.6%
+     Salaires     : 36.3% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↘️ -10.2%
+     Énergie      : 4.5% (Cible 3.2%) ✅  Trend: ➡️ stable
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 66,866 €
+     Dette Nette : -66,866 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 70,492 €.
+
+....................................................................................................
+
+DOSSIER : 040621  (Exercice 2025)
+ACTIVITÉ: 77,788 € ↘️ -79.3%  |  CLUSTER: Type 0
+SANTÉ   : 🟠 FRAGILE (Score: 60/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 54,724 € (70.4%) ↘️ -79.1%
+     E.B.E.      : -3,572 € (-4.6%) ↘️ -2.1%
+     Résultat Net: -7,912 € ↗️ +62.0%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 29.6% (Cible 25.0%) ⚠️ A SURVEILLER  Trend: ↘️ -2.6%
+     Salaires     : 17.3% (Cible 17.6%) ✅  Trend: ↘️ -47.6%
+     Énergie      : 11.6% (Cible 3.2%) ⚠️ DÉRAPAGE  Trend: ↗️ +140.0%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 1,248 €
+     Dette Nette : -1,248 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [URGENT] STOPPER LES PERTES : Votre modèle perd 3,572 €/an avant même de payer la dette. Audit prix/volume urgent.
+     👉 [COUTS] Alerte Énergie : Vos coûts sont 3.6x supérieurs à la norme.
+
+....................................................................................................
+
+DOSSIER : 040647  (Exercice 2024)
+ACTIVITÉ: 1,384,615 € ↗️ +49.0%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 90/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 854,378 € (61.7%) ↗️ +43.5%
+     E.B.E.      : 430,132 € (31.1%) ↗️ +47.2%
+     Résultat Net: 409,509 € ↗️ +48.7%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 38.3% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↗️ +6.6%
+     Salaires     : 15.7% (Cible 17.6%) ✅  Trend: ↗️ +6.5%
+     Énergie      : 1.2% (Cible 3.2%) ✅  Trend: ↘️ -30.1%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 249,974 €
+     Dette Nette : -218,634 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [MARGE] Casser les coûts matière : Vous êtes 13.2 pts au dessus du marché. Gain potentiel: 183,412 €.
+
+....................................................................................................
+
+DOSSIER : 040694  (Exercice 2025)
+ACTIVITÉ: 1,817,259 € ↘️ -25.4%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 90/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 1,359,929 € (74.8%) ↘️ -25.9%
+     E.B.E.      : 262,674 € (14.5%) ↗️ +11.9%
+     Résultat Net: 100,662 € ↗️ +156.8%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 25.2% (Cible 25.0%) ✅  Trend: ➡️ stable
+     Salaires     : 36.7% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↘️ -2.6%
+     Énergie      : 3.5% (Cible 3.2%) ✅  Trend: ➡️ stable
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 186,705 €
+     Dette Nette : 475,962 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 348,365 €.
+
+....................................................................................................
+
+DOSSIER : 040880  (Exercice 2025)
+ACTIVITÉ: 1,004,901 € ↘️ -55.1%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 80/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 751,284 € (74.8%) ↘️ -56.9%
+     E.B.E.      : 148,963 € (14.8%) ↘️ -52.4%
+     Résultat Net: 31,407 € ↘️ -54.3%
+     ⚠️ ALERTE TENDANCE: L'EBE s'est dégradé de -164,166 € en un an.
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 25.2% (Cible 25.0%) ✅  Trend: ↗️ +14.3%
+     Salaires     : 38.7% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend: ↘️ -3.1%
+     Énergie      : 4.6% (Cible 3.2%) ✅  Trend: ↗️ +66.6%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 19,721 €
+     Dette Nette : -172,702 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 212,058 €.
+
+....................................................................................................
+
+DOSSIER : 040991  (Exercice 2025)
+ACTIVITÉ: 78,675 € ↘️ -42.9%  |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 90/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 44,376 € (56.4%) ↘️ -47.7%
+     E.B.E.      : 23,464 € (29.8%) ↗️ +170.8%
+     Résultat Net: 23,464 € ↗️ +159.9%
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 43.6% (Cible 25.0%) ⚠️ DÉRAPAGE  Trend: ↗️ +13.7%
+     Salaires     : -1.5% (Cible 17.6%) ✅  Trend: ↘️ -104.5%
+     Énergie      : 5.2% (Cible 3.2%) ✅  Trend: ↗️ +33.3%
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 5,237 €
+     Dette Nette : 18,572 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [MARGE] Casser les coûts matière : Vous êtes 18.5 pts au dessus du marché. Gain potentiel: 14,592 €.
+     👉 [COUTS] Alerte Énergie : Vos coûts sont 1.6x supérieurs à la norme.
+
+....................................................................................................
+
+DOSSIER : 103569003FEC20241231  (Exercice 2024)
+ACTIVITÉ: 2,436,946 €     |  CLUSTER: Type 0
+SANTÉ   : 🟢 ROBUSTE (Score: 80/100)
+----------------------------------------------------------------------------------------------------
+ [1] DYNAMIQUE DE RENTABILITÉ
+     Marge Brute : 1,835,117 € (75.3%)   
+     E.B.E.      : 234,749 € (9.6%)   
+     Résultat Net: 39,200 €   
+
+ [2] STRUCTURE DE COÛTS & DÉRAPAGES
+     Matières     : 24.7% (Cible 25.0%) ✅  Trend:   
+     Salaires     : 37.7% (Cible 17.6%) ⚠️ DÉRAPAGE  Trend:   
+     Énergie      : 3.6% (Cible 3.2%) ✅  Trend:   
+
+ [3] BILAN & TENSION DE TRÉSORERIE
+     Cash Dispo  : 70,130 €
+     Dette Nette : 793,375 €
+
+ [4] RECOMMANDATIONS PRIORITAIRES
+     👉 [RH] Productivité faible : La masse salariale absorbe trop de valeur. Gain potentiel: 491,029 €.
