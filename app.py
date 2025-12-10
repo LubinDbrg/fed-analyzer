@@ -1,122 +1,288 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import numpy as np
+import plotly.graph_objects as go
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+import io
+import re
 
-# Configuration de la page
-st.set_page_config(page_title="Dashboard Financier", layout="wide")
+st.set_page_config(page_title="KPI Finance - Hybride AI", layout="wide")
 
-def get_financial_data():
-    """
-    Génère les données avec une logique financière corrigée :
-    - Le CA baisse puis se stabilise.
-    - L'EBITDA est corrélé au CA (marge variable).
-    - La Trésorerie est CUMULATIVE (elle baisse quand le résultat est négatif).
-    """
-    dates = pd.date_range(start='2017-01-01', periods=10, freq='AS') # AS = Début d'année
+# --- 1. FONCTIONS DE LECTURE (INCHANGÉES) ---
+def detect_separator(line):
+    if line.count(';') > line.count(','): return ';'
+    if line.count('|') > line.count(';'): return '|'
+    return ','
 
-    # 1. Chiffre d'Affaires (CA)
-    # Scénario : Forte baisse, crise, puis stabilisation
-    ca_data = [850000, 680000, 450000, 450000, 350000, 470000, 260000, 280000, 250000, 245000]
-
-    # 2. EBITDA (Rentabilité d'Exploitation)
-    # On simule une marge qui s'effondre puis remonte grâce à une restructuration
-    marges = [0.03, -0.01, -0.02, -0.03, 0.00, 0.12, 0.05, -0.04, 0.08, 0.18]
-    ebitda_data = [ca * m for ca, m in zip(ca_data, marges)]
-
-    # 3. Résultat Net
-    # EBITDA - Charges fixes estimées (ex: 10k par an)
-    charges_fixes = 10000
-    net_result_data = [e - charges_fixes for e in ebitda_data]
-
-    # 4. Trésorerie (CORRECTION MAJEURE ICI)
-    # La trésorerie est un stock qui varie selon le flux du Résultat Net
-    cash_initial = 150000
-    cash_data = []
-    current_cash = cash_initial
-    
-    for resultat in net_result_data:
-        current_cash += resultat  # Si résultat négatif, le cash diminue
-        cash_data.append(current_cash)
-
-    df = pd.DataFrame({
-        'Date': dates,
-        'CA': ca_data,
-        'EBITDA': ebitda_data,
-        'Net_Result': net_result_data,
-        'Cash': cash_data
-    })
+def standardize_columns(df):
+    mapping = {
+        'EcritureDate': ['EcritureDate', 'DateEcriture', 'Date', 'date_ecriture'],
+        'CompteNum': ['CompteNum', 'NumCompte', 'Compte', 'NumeroCompte'],
+        'Debit': ['Debit', 'MontantDebit', 'MntDebit', 'Débit'],
+        'Credit': ['Credit', 'MontantCredit', 'MntCredit', 'Crédit']
+    }
+    clean_cols = {c: c.strip() for c in df.columns}
+    df = df.rename(columns=clean_cols)
+    final_rename = {}
+    for col in df.columns:
+        for standard, variants in mapping.items():
+            if any(v.lower() == col.lower() for v in variants):
+                final_rename[col] = standard
+                break
+    if final_rename: df = df.rename(columns=final_rename)
     return df
 
-def plot_dashboard(df):
-    """
-    Crée les graphiques Matplotlib avec le style exact demandé.
-    """
-    # Création de la figure globale
-    fig, axs = plt.subplots(2, 2, figsize=(16, 10))
-    fig.patch.set_facecolor('white') # Fond blanc
+def clean_financial_number(series):
+    s = series.astype(str).str.replace(r'\s+', '', regex=True)
+    s = s.str.replace(',', '.', regex=False)
+    return pd.to_numeric(s, errors='coerce').fillna(0.0)
+
+def load_fec_robust(uploaded_file):
+    try:
+        bytes_data = uploaded_file.getvalue()
+        try: content = bytes_data.decode('latin-1')
+        except: content = bytes_data.decode('utf-8', errors='ignore')
+        
+        first_line = content.split('\n')[0]
+        sep = detect_separator(first_line)
+        
+        df = pd.read_csv(io.StringIO(content), sep=sep, dtype=str)
+        df = standardize_columns(df)
+        
+        required = ['CompteNum', 'Debit', 'Credit']
+        if not all(col in df.columns for col in required): return None
+
+        df['MontantDebit'] = clean_financial_number(df['Debit'])
+        df['MontantCredit'] = clean_financial_number(df['Credit'])
+        df['CompteNum'] = df['CompteNum'].astype(str).str.replace(r'\D', '', regex=True)
+
+        if 'EcritureDate' in df.columns:
+            df['Date_Analyse'] = pd.to_datetime(df['EcritureDate'], format='%Y%m%d', errors='coerce')
+            mask_nat = df['Date_Analyse'].isna()
+            if mask_nat.any():
+                df.loc[mask_nat, 'Date_Analyse'] = pd.to_datetime(df.loc[mask_nat, 'EcritureDate'], dayfirst=True, errors='coerce')
+            df = df.dropna(subset=['Date_Analyse'])
+        else: return None
+
+        return df
+    except: return None
+
+# --- 2. CALCUL DES INDICATEURS (INCHANGÉ) ---
+def calculer_indicateurs_mensuels(df):
+    if df.empty: return pd.DataFrame()
+    df = df.set_index('Date_Analyse').sort_index()
+    groupe_mois = df.groupby(pd.Grouper(freq='ME'))
     
-    # Titre global géré par Streamlit, mais on peut le mettre sur le plot si besoin
-    # fig.suptitle('Tableau de Bord Financier : 018403', fontsize=16, fontweight='bold')
+    resultats = []
+    for mois, data in groupe_mois:
+        if data.empty:
+            resultats.append({'Date': mois, 'CA': 0, 'EBITDA': 0, 'Resultat': 0})
+            continue
 
-    # --- Fonction de style interne ---
-    def style_ax(ax, title):
-        ax.set_title(title, fontweight='bold', fontsize=12, pad=10)
-        ax.grid(True, linestyle='--', alpha=0.6, color='gray')
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%Y'))
-        plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
-        ax.spines['top'].set_visible(True)
-        ax.spines['right'].set_visible(True)
-        ax.spines['bottom'].set_color('black')
-        ax.spines['left'].set_color('black')
+        mask_ca = data['CompteNum'].str.startswith('70')
+        ca = (data.loc[mask_ca, 'MontantCredit'] - data.loc[mask_ca, 'MontantDebit']).sum()
 
-    # --- 1. CA (Barres Bleues) ---
-    axs[0, 0].bar(df['Date'], df['CA'], width=200, color='#1f77b4', alpha=0.9)
-    style_ax(axs[0, 0], "Chiffre d'Affaires (CA)")
+        mask_prod = data['CompteNum'].str.match(r'^(70|71|72|73|74)')
+        prod = (data.loc[mask_prod, 'MontantCredit'] - data.loc[mask_prod, 'MontantDebit']).sum()
+        mask_chg = data['CompteNum'].str.match(r'^(60|61|62|63|64)')
+        chg = (data.loc[mask_chg, 'MontantDebit'] - data.loc[mask_chg, 'MontantCredit']).sum()
+        ebitda = prod - chg
 
-    # --- 2. EBITDA (Ligne Orange) ---
-    axs[0, 1].plot(df['Date'], df['EBITDA'], color='#ff7f0e', marker='o', linewidth=2.5, markersize=6)
-    axs[0, 1].axhline(0, color='black', linewidth=1)
-    style_ax(axs[0, 1], "EBITDA (Rentabilité d'Exploitation)")
+        mask_cl7 = data['CompteNum'].str.startswith('7')
+        total_prod = (data.loc[mask_cl7, 'MontantCredit'] - data.loc[mask_cl7, 'MontantDebit']).sum()
+        mask_cl6 = data['CompteNum'].str.startswith('6')
+        total_chg = (data.loc[mask_cl6, 'MontantDebit'] - data.loc[mask_cl6, 'MontantCredit']).sum()
+        resultat = total_prod - total_chg
 
-    # --- 3. Résultat Net (Barres Vertes/Rouges) ---
-    colors = ['#2ca02c' if x >= 0 else '#d62728' for x in df['Net_Result']]
-    axs[1, 0].bar(df['Date'], df['Net_Result'], width=200, color=colors, alpha=0.9)
-    axs[1, 0].axhline(0, color='black', linewidth=1)
-    style_ax(axs[1, 0], "Résultat Net")
+        resultats.append({'Date': mois, 'CA': ca, 'EBITDA': ebitda, 'Resultat': resultat})
 
-    # --- 4. Trésorerie (Aire Violette) ---
-    axs[1, 1].plot(df['Date'], df['Cash'], color='#9467bd', linewidth=2)
-    axs[1, 1].fill_between(df['Date'], df['Cash'], color='#9467bd', alpha=0.3)
-    # Ligne rouge pointillée pour marquer le niveau zéro (danger)
-    axs[1, 1].axhline(0, color='red', linestyle=':', linewidth=1, alpha=0.7)
-    style_ax(axs[1, 1], "Position de Trésorerie (Cumul)")
+    return pd.DataFrame(resultats).set_index('Date')
 
-    plt.tight_layout()
-    return fig
+def calculer_tresorerie_quotidienne(df):
+    if df.empty: return pd.Series()
+    mask_treso = df['CompteNum'].str.startswith('5')
+    df_treso = df[mask_treso].copy()
+    df_treso['Flux'] = df_treso['MontantDebit'] - df_treso['MontantCredit']
+    df_treso = df_treso.set_index('Date_Analyse').sort_index()
+    flux_journalier = df_treso['Flux'].resample('D').sum().fillna(0)
+    return flux_journalier.cumsum()
 
-# --- Main App ---
+# --- 3. PRÉDICTION HYBRIDE (UNIQUEMENT POUR LE CA) ---
 
-st.title("Tableau de Bord Financier : 018403")
-st.markdown("---")
+def create_features(df, label=None):
+    df = df.copy()
+    df['month'] = df.index.month
+    df['quarter'] = df.index.quarter
+    df['dayofyear'] = df.index.dayofyear
+    df['time_idx'] = np.arange(len(df))
+    return df
 
-# Récupération des données
-df = get_financial_data()
+def predict_hybrid_ca(series, months_to_predict, trend_factor=1.0):
+    """
+    Prédit le CA (Top Line) en utilisant AI + Scénario
+    """
+    if len(series) < 6: return None
 
-# Affichage des indicateurs clés (KPIs) en haut
-kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-kpi1.metric("CA (Dernier)", f"{df['CA'].iloc[-1]:,.0f} €", delta=f"{df['CA'].iloc[-1] - df['CA'].iloc[-2]:,.0f}")
-kpi2.metric("EBITDA (Dernier)", f"{df['EBITDA'].iloc[-1]:,.0f} €")
-kpi3.metric("Résultat Net (Dernier)", f"{df['Net_Result'].iloc[-1]:,.0f} €")
-kpi4.metric("Trésorerie Actuelle", f"{df['Cash'].iloc[-1]:,.0f} €", delta_color="normal")
+    # Préparation des données
+    df = pd.DataFrame({'y': series})
+    df = create_features(df)
+    
+    X = df[['time_idx', 'month', 'quarter']]
+    y = df['y']
 
-st.markdown("---")
+    # 1. Tendance (Linear)
+    model_trend = LinearRegression()
+    model_trend.fit(df[['time_idx']], y)
+    trend_pred = model_trend.predict(df[['time_idx']])
+    
+    # 2. Saisonnalité (Random Forest sur les résidus)
+    y_residuals = y - trend_pred
+    model_rf = RandomForestRegressor(n_estimators=100, random_state=42)
+    model_rf.fit(X, y_residuals)
 
-# Affichage du graphique Matplotlib
-fig = plot_dashboard(df)
-st.pyplot(fig)
+    # 3. Futur
+    last_date = series.index[-1]
+    future_dates = pd.date_range(start=last_date, periods=months_to_predict + 1, freq=series.index.freq)[1:]
+    
+    future_df = pd.DataFrame(index=future_dates)
+    future_df['month'] = future_df.index.month
+    future_df['quarter'] = future_df.index.quarter
+    future_df['dayofyear'] = future_df.index.dayofyear
+    last_idx = df['time_idx'].iloc[-1]
+    future_df['time_idx'] = np.arange(last_idx + 1, last_idx + 1 + months_to_predict)
+    
+    X_future = future_df[['time_idx', 'month', 'quarter']]
+    
+    future_trend = model_trend.predict(future_df[['time_idx']])
+    future_residuals = model_rf.predict(X_future)
+    
+    final_pred = future_trend + future_residuals
+    
+    # Application du scénario
+    growth_curve = np.linspace(1, trend_factor, len(final_pred))
+    final_pred = final_pred * growth_curve
+    
+    return pd.Series(final_pred, index=future_dates)
 
-# Affichage des données brutes (optionnel)
-with st.expander("Voir les données sources"):
-    st.dataframe(df.style.format("{:,.0f}"))
+# --- 4. INTERFACE ---
+
+st.sidebar.header("Paramètres")
+api_key = st.sidebar.text_input("Clé API Gemini", type="password")
+uploaded_files = st.sidebar.file_uploader("Fichiers FEC", accept_multiple_files=True)
+horizon_years = st.sidebar.slider("Horizon prédiction (années)", 1, 3, 2)
+
+st.sidebar.subheader("🌍 Scénario")
+scenario_map = {
+    "Neutre": 1.0, "Optimiste (+5%)": 1.05, "Pessimiste (-5%)": 0.95,
+    "Inflation (+1.5%)": 1.015
+}
+choix = st.sidebar.selectbox("Tendance :", list(scenario_map.keys()))
+trend_factor = scenario_map[choix]
+
+st.title("📊 Finance : Modèle Hybride Cohérent")
+
+if uploaded_files:
+    all_dfs = []
+    for file in uploaded_files:
+        df = load_fec_robust(file)
+        if df is not None: all_dfs.append(df)
+
+    if all_dfs:
+        df_global = pd.concat(all_dfs, ignore_index=True)
+        df_mensuel = calculer_indicateurs_mensuels(df_global)
+        serie_treso_jour = calculer_tresorerie_quotidienne(df_global)
+
+        if not df_mensuel.empty:
+            months_pred = horizon_years * 12
+
+            last_m = df_mensuel.iloc[-1]
+            last_treso = serie_treso_jour.iloc[-1] if not serie_treso_jour.empty else 0
+            
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("CA Mensuel", f"{last_m['CA']:,.0f} €")
+            c2.metric("EBITDA", f"{last_m['EBITDA']:,.0f} €")
+            c3.metric("Résultat Net", f"{last_m['Resultat']:,.0f} €")
+            c4.metric("Trésorerie J-J", f"{last_treso:,.0f} €")
+            
+            st.markdown("---")
+
+            # --- CALCUL DES PRÉDICTIONS COHÉRENTES ---
+            # 1. On prédit le CA avec l'AI (Top Line)
+            pred_ca = predict_hybrid_ca(df_mensuel['CA'], months_pred, trend_factor)
+            
+            if pred_ca is not None:
+                # 2. On dérive l'EBITDA via le Taux de Marge historique (Moyenne des 12 derniers mois)
+                # Cela garantit que EBITDA suit le CA
+                last_12 = df_mensuel.iloc[-12:]
+                marge_ebitda = (last_12['EBITDA'].sum() / last_12['CA'].sum()) if last_12['CA'].sum() != 0 else 0
+                pred_ebitda = pred_ca * marge_ebitda
+
+                # 3. On dérive le Résultat Net
+                # On estime l'écart moyen (Impôts, Amortissements, Frais Fi)
+                ecart_resultat = (last_12['EBITDA'] - last_12['Resultat']).mean()
+                pred_result = pred_ebitda - ecart_resultat
+
+                # 4. On dérive la Trésorerie (CUMULATIVE)
+                # Tréso Future = Tréso Actuelle + Somme Cumulée des Résultats Futurs
+                # Note: C'est une approx comptable (Flux de Tréso ~= Résultat Net), suffisant pour un dashboard de ce type
+                pred_treso = []
+                current_cash = last_treso
+                for res in pred_result:
+                    current_cash += res
+                    pred_treso.append(current_cash)
+                pred_treso = pd.Series(pred_treso, index=pred_ca.index)
+
+            col1, col2 = st.columns(2)
+
+            # GRAPHIQUE 1 : CA
+            with col1:
+                fig_ca = go.Figure()
+                fig_ca.add_trace(go.Bar(x=df_mensuel.index, y=df_mensuel['CA'], name='Historique', marker_color='#1f77b4'))
+                if pred_ca is not None:
+                    fig_ca.add_trace(go.Bar(x=pred_ca.index, y=pred_ca, name='Prévision', marker_pattern_shape='/', marker_color='#1f77b4', opacity=0.5))
+                fig_ca.update_layout(title="Chiffre d'Affaires", height=350, template="plotly_white")
+                st.plotly_chart(fig_ca, use_container_width=True)
+
+            # GRAPHIQUE 2 : EBITDA
+            with col2:
+                fig_eb = go.Figure()
+                fig_eb.add_trace(go.Scatter(x=df_mensuel.index, y=df_mensuel['EBITDA'], mode='lines+markers', name='Historique', 
+                                            line=dict(color='#ff7f0e', width=3)))
+                if pred_ca is not None:
+                     fig_eb.add_trace(go.Scatter(x=pred_ebitda.index, y=pred_ebitda, mode='lines+markers', name='Prévision (Marge cte)', 
+                                                 line=dict(color='#ff7f0e', width=2, dash='dot')))
+                fig_eb.add_hline(y=0, line_color="black", line_width=1)
+                fig_eb.update_layout(title="EBITDA", height=350, template="plotly_white")
+                st.plotly_chart(fig_eb, use_container_width=True)
+
+            col3, col4 = st.columns(2)
+
+            # GRAPHIQUE 3 : RESULTAT
+            with col3:
+                fig_res = go.Figure()
+                colors_hist = ['#2ca02c' if v >= 0 else '#d62728' for v in df_mensuel['Resultat']]
+                fig_res.add_trace(go.Bar(x=df_mensuel.index, y=df_mensuel['Resultat'], name='Historique', marker_color=colors_hist))
+                
+                if pred_ca is not None:
+                    colors_pred = ['#2ca02c' if v >= 0 else '#d62728' for v in pred_result]
+                    fig_res.add_trace(go.Bar(x=pred_result.index, y=pred_result, name='Prévision', marker_pattern_shape='/', marker_color=colors_pred, opacity=0.6))
+
+                fig_res.add_hline(y=0, line_color="black", line_width=1)
+                fig_res.update_layout(title="Résultat Net", height=350, template="plotly_white")
+                st.plotly_chart(fig_res, use_container_width=True)
+
+            # GRAPHIQUE 4 : TRÉSORERIE (CORRIGÉ)
+            with col4:
+                fig_tr = go.Figure()
+                # Historique (lissé au mois pour l'affichage global)
+                treso_mensuelle_hist = serie_treso_jour.resample('ME').last()
+                fig_tr.add_trace(go.Scatter(x=treso_mensuelle_hist.index, y=treso_mensuelle_hist, mode='lines', name='Historique', fill='tozeroy', line=dict(color='#9467bd', width=2)))
+
+                if pred_ca is not None:
+                     fig_tr.add_trace(go.Scatter(x=pred_treso.index, y=pred_treso, mode='lines', name='Prévision (Cumul Résultat)', 
+                                                 fill='tozeroy', line=dict(color='#9467bd', width=2, dash='dot')))
+                
+                fig_tr.add_hline(y=0, line_color="red", line_width=1, line_dash="dot")
+                fig_tr.update_layout(title="Position de Trésorerie (Projection)", height=350, template="plotly_white")
+                st.plotly_chart(fig_tr, use_container_width=True)
