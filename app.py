@@ -23,66 +23,80 @@ EVENTS_DB = [
     {"date": "2025-01-20", "label": "Tarifs Trump", "color": "#800080"},
 ]
 
-# --- 1. FONCTIONS UTILITAIRES & GEMINI ---
+# --- 1. FONCTIONS UTILITAIRES & GEMINI (INTELLIGENT) ---
 
 def clear_fec_cache():
     if "fec_uploader" in st.session_state:
         st.session_state["fec_uploader"] = []
 
+def get_best_available_model():
+    """
+    Parcourt les modèles disponibles pour l'utilisateur et choisit le meilleur automatiquement.
+    Priorité : Modèles 'Flash' (Rapides) > Modèles 'Pro' > Autres
+    """
+    try:
+        available_models = []
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                available_models.append(m.name)
+        
+        # 1. Chercher le modèle Flash 2.0 ou Expérimental (Le plus récent)
+        for m in available_models:
+            if "2.0-flash" in m or "exp" in m:
+                return m
+        
+        # 2. Chercher le modèle Flash 1.5
+        for m in available_models:
+            if "1.5-flash" in m:
+                return m
+                
+        # 3. Chercher le modèle Pro
+        for m in available_models:
+            if "pro" in m:
+                return m
+        
+        # 4. Sinon le premier disponible
+        return available_models[0] if available_models else None
+    except Exception:
+        return None
+
 def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
-    """
-    Fonction qui appelle Gemini avec un système de secours (Fallback)
-    Si 'gemini-1.5-flash' échoue, on tente 'gemini-pro'.
-    """
     if not api_key:
         return "⚠️ Veuillez entrer votre clé API Gemini dans la barre latérale."
 
     try:
         genai.configure(api_key=api_key)
         
-        # Le Prompt (Consigne) pour l'IA
-        prompt = f"""
-        Tu es un expert CFO spécialisé dans le secteur de la restauration (Restaurant, Bar, Brasserie).
-        Analyse la situation financière suivante pour un restaurant :
+        # Sélection automatique du modèle
+        model_name = get_best_available_model()
+        
+        if not model_name:
+             return "❌ Aucun modèle compatible trouvé sur cette clé API."
 
-        DONNÉES ACTUELLES (Dernier Mois) :
-        - Chiffre d'Affaires : {stats_dict['CA']} €
+        # Le Prompt
+        prompt = f"""
+        Tu es un expert CFO spécialisé dans le secteur de la restauration.
+        Analyse la situation financière suivante :
+
+        DONNÉES (Dernier Mois) :
+        - CA : {stats_dict['CA']} €
         - EBITDA : {stats_dict['EBITDA']} €
         - Résultat Net : {stats_dict['Resultat']} €
-        - Trésorerie Disponible : {stats_dict['Treso']} €
+        - Trésorerie : {stats_dict['Treso']} €
         
-        CONTEXTE ET PRÉVISIONS :
-        - Scénario économique retenu : {scenario_nom}
+        CONTEXTE : Scénario {scenario_nom}
         
-        TA MISSION :
-        Donne 3 conseils stratégiques et opérationnels très précis pour améliorer la rentabilité et sécuriser la trésorerie.
-        Utilise le vocabulaire de la restauration (Food Cost, Prime Cost, Ticket Moyen, Ratios personnel, Menu Engineering, Coulage, etc.).
-        
-        Format de réponse souhaité :
-        1. **Analyse Rapide** : Une phrase sur la santé globale (Sain / En danger).
-        2. **Conseil 1 (Marge & Carte)** : Action concrète sur les coûts matières ou les prix.
-        3. **Conseil 2 (Gestion & Staff)** : Action sur la productivité ou les frais fixes.
-        4. **Conseil 3 (Trésorerie)** : Action pour protéger le cash immédiatement.
-        
-        Sois direct, professionnel et bienveillant.
+        MISSION : 3 conseils (Marge, Staff, Cash) pour un restaurateur.
         """
         
-        # --- TENTATIVE 1 : Modèle Rapide (Flash) ---
-        try:
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            with st.spinner('🤖 Analyse AI (Mode Flash)...'):
-                response = model.generate_content(prompt)
-                return response.text
-        except Exception:
-            # --- TENTATIVE 2 : Modèle Standard (Pro) - En cas d'erreur sur le premier ---
-            # Souvent plus stable sur les anciennes versions de la librairie
-            model = genai.GenerativeModel('gemini-pro')
-            with st.spinner('🤖 Analyse AI (Mode Standard)...'):
-                response = model.generate_content(prompt)
-                return response.text
+        model = genai.GenerativeModel(model_name)
+        
+        with st.spinner(f'🤖 Analyse en cours avec le modèle : {model_name}...'):
+            response = model.generate_content(prompt)
+            return response.text
 
     except Exception as e:
-        return f"❌ Erreur critique Gemini : {e}. \nConseil : Essayez de mettre à jour la librairie avec 'pip install -U google-generativeai'"
+        return f"❌ Erreur technique : {e}"
 
 def add_context_to_figure(fig, start_date, end_date):
     start_ts = pd.Timestamp(start_date)
@@ -106,7 +120,7 @@ def show_zoomed_chart(fig_base, title, start_date, end_date):
     st.plotly_chart(fig_zoom, use_container_width=True)
     st.info("Les lignes pointillées représentent les évènements extra-financiers.")
 
-# --- 2. FONCTIONS DE LECTURE (STANDARD) ---
+# --- 2. FONCTIONS DE LECTURE ---
 def detect_separator(line):
     if line.count(';') > line.count(','): return ';'
     if line.count('|') > line.count(';'): return '|'
@@ -247,7 +261,19 @@ horizon_years = st.sidebar.slider("Horizon prédiction (années)", 1, 3, 2)
 # Clé API pour Gemini
 st.sidebar.markdown("---")
 st.sidebar.subheader("🤖 Intelligence Artificielle")
-api_key_input = st.sidebar.text_input("Clé API Gemini (Google)", type="password", help="Nécessaire pour le module de conseils personnalisés")
+api_key_input = st.sidebar.text_input("Clé API Gemini", type="password")
+
+# DIAGNOSTIC AUTOMATIQUE DES MODÈLES (DANS LA SIDEBAR)
+if api_key_input:
+    try:
+        genai.configure(api_key=api_key_input)
+        best_model = get_best_available_model()
+        if best_model:
+            st.sidebar.success(f"✅ Modèle détecté : {best_model}")
+        else:
+            st.sidebar.error("❌ Aucun modèle compatible trouvé.")
+    except Exception as e:
+        st.sidebar.warning("Erreur connexion API (Vérifiez la clé)")
 
 st.sidebar.subheader("🌍 Scénario Éco")
 scenario_map = {
@@ -385,32 +411,12 @@ if uploaded_files:
             if col_ai_btn.button("🤖 Générer l'analyse"):
                 if api_key_input:
                     conseils = generer_conseils_gemini(api_key_input, stats_gemini, choix_scenario)
-                    st.success("Analyse générée avec succès !")
-                    st.markdown(conseils)
+                    if "❌" in conseils:
+                        st.error(conseils)
+                    else:
+                        st.success("Analyse générée avec succès !")
+                        st.markdown(conseils)
                 else:
                     st.error("Veuillez entrer une clé API dans la barre latérale.")
             else:
                 st.info("Cliquez sur le bouton pour demander à Gemini d'analyser vos chiffres et proposer des actions correctives pour votre restaurant.")
-
-# --- DIAGNOSTIC (A COLLER EN BAS DE APP.PY) ---
-# Ce code va afficher dans la sidebar la liste des modèles que VOTRE ordinateur voit.
-if api_key_input:
-    try:
-        genai.configure(api_key=api_key_input)
-        st.sidebar.markdown("---")
-        st.sidebar.warning("🔍 DIAGNOSTIC TECHNIQUE")
-        st.sidebar.write(f"Version librairie : {genai.__version__}")
-        
-        st.sidebar.write("Modèles détectés :")
-        found_models = []
-        for m in genai.list_models():
-            # On cherche les modèles capables de générer du texte
-            if 'generateContent' in m.supported_generation_methods:
-                found_models.append(m.name)
-                st.sidebar.code(m.name)
-        
-        if not found_models:
-            st.sidebar.error("Aucun modèle trouvé. Problème de clé ou de région.")
-            
-    except Exception as e:
-        st.sidebar.error(f"Erreur de connexion : {e}")
