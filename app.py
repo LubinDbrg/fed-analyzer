@@ -23,16 +23,27 @@ EVENTS_DB = [
     {"date": "2025-01-20", "label": "Tarifs Trump", "color": "#800080"},
 ]
 
-# --- 1. FONCTIONS UTILITAIRES & GEMINI (CORRIGÉ & STABILISÉ) ---
+# --- 1. FONCTIONS UTILITAIRES & GEMINI ---
 
 def clear_fec_cache():
     if "fec_uploader" in st.session_state:
         st.session_state["fec_uploader"] = []
 
+def format_fr_currency(value):
+    """
+    Formate un nombre avec un POINT pour les milliers et ajoute le symbole €.
+    Exemple: 12345 -> '12.345 €'
+    """
+    # On formate d'abord avec la virgule standard US (12,345)
+    us_fmt = f"{value:,.0f}"
+    # On remplace la virgule par un point
+    fr_fmt = us_fmt.replace(',', '.')
+    return f"{fr_fmt} €"
+
 def get_best_available_model():
     """
     Parcourt les modèles disponibles et choisit le plus STABLE avec le meilleur quota.
-    CORRECTION : Priorité absolue à '1.5-flash' (Stable) sur les versions 'exp' (Limitées).
+    Priorité absolue à '1.5-flash' (Stable).
     """
     try:
         available_models = []
@@ -40,19 +51,17 @@ def get_best_available_model():
             if 'generateContent' in m.supported_generation_methods:
                 available_models.append(m.name)
         
-        # 1. PRIORITÉ ABSOLUE : Gemini 1.5 Flash (Le standard stable avec haut quota)
-        # On cherche exactement "gemini-1.5-flash" ou une variante stable
+        # 1. PRIORITÉ : Gemini 1.5 Flash (Standard stable)
         for m in available_models:
             if "gemini-1.5-flash" in m and "exp" not in m and "8b" not in m:
                 return m
         
-        # 2. Si pas trouvé, on cherche Gemini 1.5 Pro (Plus puissant, moins de quota)
+        # 2. Gemini 1.5 Pro
         for m in available_models:
             if "gemini-1.5-pro" in m and "exp" not in m:
                 return m
                 
-        # 3. En dernier recours, les modèles expérimentaux (2.0, etc.)
-        # C'est eux qui causaient l'erreur 429 car leurs quotas sont faibles
+        # 3. Fallback
         for m in available_models:
             if "flash" in m:
                 return m
@@ -68,22 +77,20 @@ def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
     try:
         genai.configure(api_key=api_key)
         
-        # Sélection automatique du modèle (Version Corrigée)
         model_name = get_best_available_model()
         
         if not model_name:
              return "❌ Aucun modèle compatible trouvé sur cette clé API."
 
-        # Le Prompt
         prompt = f"""
         Tu es un expert CFO spécialisé dans le secteur de la restauration.
         Analyse la situation financière suivante :
 
         DONNÉES (Dernier Mois) :
-        - CA : {stats_dict['CA']} €
-        - EBITDA : {stats_dict['EBITDA']} €
-        - Résultat Net : {stats_dict['Resultat']} €
-        - Trésorerie : {stats_dict['Treso']} €
+        - CA : {stats_dict['CA']}
+        - EBITDA : {stats_dict['EBITDA']}
+        - Résultat Net : {stats_dict['Resultat']}
+        - Trésorerie : {stats_dict['Treso']}
         
         CONTEXTE : Scénario {scenario_nom}
         
@@ -97,9 +104,8 @@ def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
             return response.text
 
     except Exception as e:
-        # Gestion propre de l'erreur 429 (Quota)
         if "429" in str(e):
-             return "⚠️ **Limite de quota atteinte.** Le modèle est surchargé ou vous avez dépassé le quota gratuit (15 req/min). Attendez une minute et réessayez."
+             return "⚠️ **Limite de quota atteinte.** Le modèle est surchargé. Attendez une minute."
         return f"❌ Erreur technique : {e}"
 
 def add_context_to_figure(fig, start_date, end_date):
@@ -313,12 +319,12 @@ if uploaded_files:
             last_m = df_mensuel.iloc[-1]
             last_treso = serie_treso_jour.iloc[-1] if not serie_treso_jour.empty else 0
             
-            # --- KPI Cards ---
+            # --- KPI Cards (AFFICHAGE MODIFIÉ AVEC POINTS ET TITRES CLAIRS) ---
             c1, c2, c3, c4 = st.columns(4)
-            c1.metric("CA Mensuel", f"{last_m['CA']:,.0f} €")
-            c2.metric("EBITDA", f"{last_m['EBITDA']:,.0f} €")
-            c3.metric("Résultat Net", f"{last_m['Resultat']:,.0f} €")
-            c4.metric("Trésorerie J-J", f"{last_treso:,.0f} €")
+            c1.metric("📅 Chiffre d'Affaires (Dernier Mois)", format_fr_currency(last_m['CA']))
+            c2.metric("⚡ EBITDA (Rentabilité Opérationnelle)", format_fr_currency(last_m['EBITDA']))
+            c3.metric("💰 Résultat Net (Bénéfice)", format_fr_currency(last_m['Resultat']))
+            c4.metric("🏦 Trésorerie Disponible (Cash)", format_fr_currency(last_treso))
             
             st.markdown("---")
 
@@ -409,11 +415,12 @@ if uploaded_files:
             
             col_ai_btn, col_ai_txt = st.columns([0.2, 0.8])
             
+            # Formatage des chiffres pour le prompt (avec les points aussi, c'est plus propre)
             stats_gemini = {
-                'CA': f"{last_m['CA']:,.0f}",
-                'EBITDA': f"{last_m['EBITDA']:,.0f}",
-                'Resultat': f"{last_m['Resultat']:,.0f}",
-                'Treso': f"{last_treso:,.0f}"
+                'CA': format_fr_currency(last_m['CA']),
+                'EBITDA': format_fr_currency(last_m['EBITDA']),
+                'Resultat': format_fr_currency(last_m['Resultat']),
+                'Treso': format_fr_currency(last_treso)
             }
 
             if col_ai_btn.button("🤖 Générer l'analyse"):
