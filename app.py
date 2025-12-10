@@ -9,6 +9,13 @@ import re
 
 st.set_page_config(page_title="KPI Finance - Hybride AI", layout="wide")
 
+# --- 0. GESTION DU BOUTON "SUPPRIMER" ---
+def clear_fec_cache():
+    """Callback pour vider le chargeur de fichiers"""
+    if "fec_uploader" in st.session_state:
+        # On remplace par une liste vide ou on supprime la clé
+        st.session_state["fec_uploader"] = []
+
 # --- 1. FONCTIONS DE LECTURE ---
 def detect_separator(line):
     if line.count(';') > line.count(','): return ';'
@@ -72,13 +79,11 @@ def load_fec_robust(uploaded_file):
 def calculer_indicateurs_mensuels(df):
     if df.empty: return pd.DataFrame()
     df = df.set_index('Date_Analyse').sort_index()
-    # Utilisation de 'ME' (Month End) pour grouper
     groupe_mois = df.groupby(pd.Grouper(freq='ME'))
     
     resultats = []
     for mois, data in groupe_mois:
         if data.empty:
-            # On garde les mois vides pour la continuité temporelle (important pour les graphes)
             resultats.append({'Date': mois, 'CA': 0, 'EBITDA': 0, 'Resultat': 0})
             continue
 
@@ -110,7 +115,7 @@ def calculer_tresorerie_quotidienne(df):
     flux_journalier = df_treso['Flux'].resample('D').sum().fillna(0)
     return flux_journalier.cumsum()
 
-# --- 3. PRÉDICTION HYBRIDE (ROBUSTE) ---
+# --- 3. PRÉDICTION HYBRIDE ---
 
 def create_features(df, label=None):
     df = df.copy()
@@ -121,38 +126,24 @@ def create_features(df, label=None):
     return df
 
 def predict_hybrid_ca(series, months_to_predict, trend_factor=1.0):
-    """
-    Prédit le CA (Top Line) en utilisant AI + Scénario.
-    Version 'Tolérante' : Accepte moins de données et gère les erreurs.
-    """
-    # Nettoyage préventif
     series = series.fillna(0)
-    
-    # 1. Vérification minimale : On essaie de prédire même avec peu de points (min 2 mois)
-    if len(series) < 2:
-        return None
+    if len(series) < 2: return None
 
     try:
-        # Préparation des données
         df = pd.DataFrame({'y': series})
         df = create_features(df)
-        
         X = df[['time_idx', 'month', 'quarter']]
         y = df['y']
 
-        # 2. Modèle de Tendance (Linear)
         model_trend = LinearRegression()
         model_trend.fit(df[['time_idx']], y)
         trend_pred = model_trend.predict(df[['time_idx']])
         
-        # 3. Modèle de Saisonnalité (Random Forest sur les résidus)
         y_residuals = y - trend_pred
         model_rf = RandomForestRegressor(n_estimators=100, random_state=42)
         model_rf.fit(X, y_residuals)
 
-        # 4. Génération du Futur
         last_date = series.index[-1]
-        # Force la fréquence 'ME' pour éviter les erreurs si l'index est malformé
         future_dates = pd.date_range(start=last_date, periods=months_to_predict + 1, freq='ME')[1:]
         
         future_df = pd.DataFrame(index=future_dates)
@@ -170,17 +161,13 @@ def predict_hybrid_ca(series, months_to_predict, trend_factor=1.0):
         
         final_pred = future_trend + future_residuals
         
-        # Application du scénario
         growth_curve = np.linspace(1, trend_factor, len(final_pred))
         final_pred = final_pred * growth_curve
-        
-        # On évite les prédictions négatives pour le CA
         final_pred = np.maximum(final_pred, 0)
         
         return pd.Series(final_pred, index=future_dates)
         
     except Exception as e:
-        # En cas d'erreur interne, on l'affiche dans la console Streamlit pour débogage
         print(f"Erreur prédiction: {e}")
         return None
 
@@ -188,7 +175,13 @@ def predict_hybrid_ca(series, months_to_predict, trend_factor=1.0):
 
 st.sidebar.header("Paramètres")
 api_key = st.sidebar.text_input("Clé API Gemini", type="password")
-uploaded_files = st.sidebar.file_uploader("Fichiers FEC", accept_multiple_files=True)
+
+# --- AJOUT BOUTON SUPPRIMER ---
+col_suppr, col_upload = st.sidebar.columns([0.2, 0.8])
+st.sidebar.button("🗑️ Tout supprimer", on_click=clear_fec_cache, help="Efface toutes les données chargées")
+
+# Upload avec clé de session pour pouvoir être vidé
+uploaded_files = st.sidebar.file_uploader("Fichiers FEC", accept_multiple_files=True, key="fec_uploader")
 horizon_years = st.sidebar.slider("Horizon prédiction (années)", 1, 3, 2)
 
 st.sidebar.subheader("🌍 Scénario")
@@ -226,29 +219,24 @@ if uploaded_files:
             
             st.markdown("---")
 
-            # --- CALCUL DES PRÉDICTIONS ---
+            # --- CALCUL ---
             with st.spinner('Calcul des prédictions IA en cours...'):
                 pred_ca = predict_hybrid_ca(df_mensuel['CA'], months_pred, trend_factor)
             
-            # Variables pour stocker les prédictions dérivées
             pred_ebitda = None
             pred_result = None
             pred_treso = None
 
             if pred_ca is not None:
-                # Calcul des dérivés seulement si la prédiction CA a réussi
                 last_12 = df_mensuel.iloc[-12:] if len(df_mensuel) >= 12 else df_mensuel
                 
-                # Marge EBITDA moyenne
                 sum_ca = last_12['CA'].sum()
                 marge_ebitda = (last_12['EBITDA'].sum() / sum_ca) if sum_ca != 0 else 0
                 pred_ebitda = pred_ca * marge_ebitda
 
-                # Écart Résultat moyen
                 ecart_resultat = (last_12['EBITDA'] - last_12['Resultat']).mean()
                 pred_result = pred_ebitda - ecart_resultat
 
-                # Trésorerie Cumulative
                 pred_treso_list = []
                 current_cash = last_treso
                 for res in pred_result:
@@ -256,9 +244,8 @@ if uploaded_files:
                     pred_treso_list.append(current_cash)
                 pred_treso = pd.Series(pred_treso_list, index=pred_ca.index)
             else:
-                st.warning("⚠️ Impossible de générer une prédiction : Historique insuffisant ou données trop irrégulières.")
+                st.warning("⚠️ Impossible de générer une prédiction : Historique insuffisant.")
 
-            # --- GRAPHIQUES ---
             col1, col2 = st.columns(2)
 
             # GRAPHIQUE 1 : CA
@@ -266,53 +253,32 @@ if uploaded_files:
                 fig_ca = go.Figure()
                 fig_ca.add_trace(go.Bar(x=df_mensuel.index, y=df_mensuel['CA'], name='Historique', marker_color='#1f77b4'))
                 if pred_ca is not None:
-                    fig_ca.add_trace(go.Bar(x=pred_ca.index, y=pred_ca, name='Prévision AI', marker_pattern_shape='/', marker_color='#1f77b4', opacity=0.5))
+                    # Prévision hachurée plus visible (couleur différente + hachures)
+                    fig_ca.add_trace(go.Bar(x=pred_ca.index, y=pred_ca, name='Prévision AI', 
+                                            marker_pattern_shape='/', 
+                                            marker_color='#4ad3d8', # Couleur cyan clair pour la prévision
+                                            opacity=0.7))
                 fig_ca.update_layout(title="Chiffre d'Affaires", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
                 st.plotly_chart(fig_ca, use_container_width=True)
 
-            # GRAPHIQUE 2 : EBITDA
+            # GRAPHIQUE 2 : EBITDA (MODIFICATION DEMANDÉE : EXAGÉRATION)
             with col2:
                 fig_eb = go.Figure()
+                # Historique en Orange standard
                 fig_eb.add_trace(go.Scatter(x=df_mensuel.index, y=df_mensuel['EBITDA'], mode='lines+markers', name='Historique', 
                                             line=dict(color='#ff7f0e', width=3)))
+                
                 if pred_ebitda is not None:
-                     fig_eb.add_trace(go.Scatter(x=pred_ebitda.index, y=pred_ebitda, mode='lines+markers', name='Prévision', 
-                                                 line=dict(color='#ff7f0e', width=2, dash='dot')))
+                     # Prévision : Couleur TRES différente (Cyan Vif) + Trait plus épais + Tirets longs
+                     fig_eb.add_trace(go.Scatter(
+                         x=pred_ebitda.index, 
+                         y=pred_ebitda, 
+                         mode='lines+markers', 
+                         name='Prévision', 
+                         line=dict(color='#00CC96', width=4, dash='dash'), # Changement radical de style ici
+                         marker=dict(size=8, symbol='diamond')
+                    ))
+                
                 fig_eb.add_hline(y=0, line_color="white", line_width=1, opacity=0.3)
-                fig_eb.update_layout(title="EBITDA", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
-                st.plotly_chart(fig_eb, use_container_width=True)
-
-            col3, col4 = st.columns(2)
-
-            # GRAPHIQUE 3 : RESULTAT
-            with col3:
-                fig_res = go.Figure()
-                colors_hist = ['#2ca02c' if v >= 0 else '#d62728' for v in df_mensuel['Resultat']]
-                fig_res.add_trace(go.Bar(x=df_mensuel.index, y=df_mensuel['Resultat'], name='Historique', marker_color=colors_hist))
-                
-                if pred_result is not None:
-                    colors_pred = ['#2ca02c' if v >= 0 else '#d62728' for v in pred_result]
-                    fig_res.add_trace(go.Bar(x=pred_result.index, y=pred_result, name='Prévision', marker_pattern_shape='/', marker_color=colors_pred, opacity=0.6))
-
-                fig_res.add_hline(y=0, line_color="white", line_width=1, opacity=0.3)
-                fig_res.update_layout(title="Résultat Net", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
-                st.plotly_chart(fig_res, use_container_width=True)
-
-            # GRAPHIQUE 4 : TRÉSORERIE (CORRIGÉ LISSAGE)
-            with col4:
-                fig_tr = go.Figure()
-                
-                # CORRECTION ESCALIER : On rééchantillonne l'historique au MOIS pour lisser la courbe
-                # Cela relie les points de fin de mois entre eux, supprimant les "marches" quotidiennes
-                treso_lisse = serie_treso_jour.resample('ME').last()
-                
-                fig_tr.add_trace(go.Scatter(x=treso_lisse.index, y=treso_lisse, mode='lines', name='Historique', 
-                                          fill='tozeroy', line=dict(color='#9467bd', width=2)))
-
-                if pred_treso is not None:
-                     fig_tr.add_trace(go.Scatter(x=pred_treso.index, y=pred_treso, mode='lines', name='Prévision', 
-                                                 fill='tozeroy', line=dict(color='#9467bd', width=2, dash='dot')))
-                
-                fig_tr.add_hline(y=0, line_color="red", line_width=1, line_dash="dot")
-                fig_tr.update_layout(title="Trésorerie (Lissée & Projetée)", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
-                st.plotly_chart(fig_tr, use_container_width=True)
+                fig_eb.update_layout(title="EBITDA (Rentabilité)", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
+                st.plotly_chart(fig_eb, use_container_width=
