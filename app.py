@@ -11,8 +11,11 @@ import re
 # Configuration de la page
 st.set_page_config(page_title="KPI Restauration - STC", layout="wide")
 
-# Noms des fichiers (Assurez-vous qu'ils sont dans le même dossier)
-LOGO_FILE = "593989620_2217848631958856_7080388737174534799_n.png"
+# --- CONFIGURATION FICHIERS & URL ---
+# URL du logo (CDN Facebook)
+LOGO_URL = "https://scontent-mrs2-3.xx.fbcdn.net/v/t1.15752-9/593989620_2217848631958856_7080388737174534799_n.png?stp=dst-png_p394x394&_nc_cat=104&ccb=1-7&_nc_sid=0024fc&_nc_ohc=Rkmg6RI2seYQ7kNvwHe0B0i&_nc_oc=AdlAv8BhqxR27G2lrlER10hKoJbxWWIaOYh_MoFdUMTGRD1co3jYPzFyucWERnVzeHM&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=scontent-mrs2-3.xx&oh=03_Q7cD4AFbWq-h_BtPiU15YRrwm39u0HJtb-bB6ujQEuOrM6JIpQ&oe=6960DB09"
+
+# Nom du fichier de conseils (doit être dans le dossier local)
 ADVICE_FILE = "conseil_entreprises.txt"
 
 # --- 0. CONFIGURATION & DONNÉES ---
@@ -116,45 +119,29 @@ def load_advice_database(filepath):
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
         
-        # On découpe par "DOSSIER :"
-        # Le regex cherche "DOSSIER :" suivi de l'ID
         sections = re.split(r'(DOSSIER\s*:\s*)', content)
         
-        current_id = None
-        
         for i in range(1, len(sections), 2):
-            header_marker = sections[i] # "DOSSIER : "
-            body = sections[i+1] # Le reste du texte jusqu'au prochain split
-            
-            # Extraction de l'ID (ex: "000003" dans "000003  (Exercice 2025)...")
-            # On prend la première ligne du body
+            header_marker = sections[i] 
+            body = sections[i+1] 
             first_line = body.strip().split('\n')[0]
-            # On prend le premier mot de cette ligne comme ID
             dossier_id = first_line.split()[0].strip()
-            
-            # On reconstruit le texte complet
             full_text = header_marker + body
-            
-            # Nettoyage des séparateurs de fin si besoin
             full_text = full_text.split("...................")[0]
-            
             advice_db[dossier_id] = full_text.strip()
             
         return advice_db
     except Exception as e:
-        st.error(f"Erreur de lecture du fichier conseils : {e}")
+        # En mode dev local, ne pas planter si le fichier est absent
+        # st.error(f"Erreur de lecture du fichier conseils : {e}") 
         return {}
 
 def get_advice_from_txt(uploaded_filename, advice_db):
     """Cherche le conseil correspondant au fichier uploadé"""
     if not advice_db:
-        return "❌ Base de données de conseils vide ou introuvable."
+        return "❌ Base de données de conseils vide ou fichier 'conseil_entreprises.txt' introuvable."
     
-    # On essaie de trouver l'ID du dossier dans le nom du fichier
-    # Ex: Si fichier = "FEC_000003_2025.csv", on cherche si "000003" est une clé
     found_key = None
-    
-    # Méthode 1 : Correspondance exacte ou partielle
     for db_id in advice_db.keys():
         if db_id in uploaded_filename:
             found_key = db_id
@@ -296,11 +283,8 @@ def predict_hybrid_ca(series, months_to_predict, trend_factor=1.0):
 
 # --- 5. INTERFACE PRINCIPALE ---
 
-# AJOUT DU LOGO EN HAUT (NOUVEAU FICHIER)
-try:
-    st.image(LOGO_FILE, width=300)
-except:
-    st.warning(f"Image '{LOGO_FILE}' introuvable.")
+# AFFICHAGE LOGO VIA URL (SANS FICHIER LOCAL)
+st.image(LOGO_URL, width=300)
 
 st.title("📊 Finance & Restauration : Dashboard Hybride")
 
@@ -313,7 +297,7 @@ horizon_years = st.sidebar.slider("Horizon prédiction (années)", 1, 3, 2)
 st.sidebar.markdown("---")
 st.sidebar.subheader("🧠 Méthode de Conseil")
 
-# CHOIX DE LA MÉTHODE DE CONSEIL (MODIFIÉ)
+# CHOIX DE LA MÉTHODE DE CONSEIL
 method_choice = st.sidebar.radio(
     "Choisir le moteur d'analyse :",
     ("🤖 IA Générative (Gemini)", "📄 Rapport Pré-généré (Fichier TXT)"),
@@ -324,7 +308,7 @@ if method_choice == "🤖 IA Générative (Gemini)":
     api_key_input = st.sidebar.text_input("Clé API Gemini", type="password")
 else:
     api_key_input = None 
-    # Pré-chargement de la base de conseils
+    # Chargement de la base de conseils
     advice_db = load_advice_database(ADVICE_FILE)
 
 st.sidebar.subheader("🌍 Scénario Éco (Pour Prévisions)")
@@ -359,7 +343,7 @@ if uploaded_files:
             last_m = df_mensuel.iloc[-1]
             last_treso = serie_treso_jour.iloc[-1] if not serie_treso_jour.empty else 0
             
-            # --- KPI Cards (TITRES MODIFIÉS) ---
+            # --- KPI Cards ---
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("📅 CA Mensuel (Dernier Mois)", format_fr_currency(last_m['CA']))
             c2.metric("⚡ EBITDA (Dernier Mois)", format_fr_currency(last_m['EBITDA']))
@@ -449,7 +433,7 @@ if uploaded_files:
                 if c4_btn.button("🔍 Agrandir", key="btn_tr"): show_zoomed_chart(fig_tr, "Trésorerie", global_min_date, global_max_date)
                 st.plotly_chart(fig_tr, use_container_width=True)
             
-            # --- SECTION CONSEILS (MÉTHODE AU CHOIX) ---
+            # --- SECTION CONSEILS ---
             st.markdown("---")
             st.subheader(f"👨‍🍳 Conseils Stratégiques : Méthode {method_choice}")
             
@@ -457,7 +441,7 @@ if uploaded_files:
             
             if col_ai_btn.button("🚀 Générer l'analyse"):
                 
-                # CAS 1 : Méthode IA Gemini
+                # CAS 1 : IA Gemini
                 if method_choice == "🤖 IA Générative (Gemini)":
                     if api_key_input:
                         stats_gemini = {
@@ -475,9 +459,8 @@ if uploaded_files:
                     else:
                         st.error("Veuillez entrer une clé API Gemini pour utiliser l'IA.")
 
-                # CAS 2 : Lecture Fichier TXT (NOUVEAU)
+                # CAS 2 : Lecture Fichier TXT
                 elif method_choice == "📄 Rapport Pré-généré (Fichier TXT)":
-                    # On cherche le conseil correspondant au nom du fichier uploadé
                     rapport_txt = get_advice_from_txt(first_filename, advice_db)
                     st.success("Rapport chargé !")
                     st.markdown(rapport_txt)
