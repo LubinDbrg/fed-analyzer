@@ -281,4 +281,41 @@ if uploaded_files:
                 
                 fig_eb.add_hline(y=0, line_color="white", line_width=1, opacity=0.3)
                 fig_eb.update_layout(title="EBITDA (Rentabilité)", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
-                st.plotly_chart(fig_eb, use_container_width=
+                st.plotly_chart(fig_eb, use_container_width=True)
+
+            col3, col4 = st.columns(2)
+
+            # GRAPHIQUE 3 : RESULTAT
+            with col3:
+                fig_res = go.Figure()
+                colors_hist = ['#2ca02c' if v >= 0 else '#d62728' for v in df_mensuel['Resultat']]
+                fig_res.add_trace(go.Bar(x=df_mensuel.index, y=df_mensuel['Resultat'], name='Historique', marker_color=colors_hist))
+                
+                if pred_result is not None:
+                    # Couleurs atténuées pour la prévision pour différencier du réel
+                    colors_pred = ['#5cd65c' if v >= 0 else '#ff6666' for v in pred_result]
+                    fig_res.add_trace(go.Bar(x=pred_result.index, y=pred_result, name='Prévision', 
+                                             marker_pattern_shape='x', # Hachures en croix
+                                             marker_color=colors_pred, 
+                                             opacity=0.8))
+
+                fig_res.add_hline(y=0, line_color="white", line_width=1, opacity=0.3)
+                fig_res.update_layout(title="Résultat Net", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
+                st.plotly_chart(fig_res, use_container_width=True)
+
+            # GRAPHIQUE 4 : TRÉSORERIE
+            with col4:
+                fig_tr = go.Figure()
+                treso_lisse = serie_treso_jour.resample('ME').last()
+                
+                fig_tr.add_trace(go.Scatter(x=treso_lisse.index, y=treso_lisse, mode='lines', name='Historique', 
+                                          fill='tozeroy', line=dict(color='#9467bd', width=2)))
+
+                if pred_treso is not None:
+                     fig_tr.add_trace(go.Scatter(x=pred_treso.index, y=pred_treso, mode='lines', name='Prévision', 
+                                                 fill='tonexty', # Remplissage continu
+                                                 line=dict(color='#D670D6', width=3, dash='dash'))) # Violet plus clair et tirets
+                
+                fig_tr.add_hline(y=0, line_color="red", line_width=1, line_dash="dot")
+                fig_tr.update_layout(title="Trésorerie", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
+                st.plotly_chart(fig_tr, use_container_width=True)
