@@ -108,7 +108,7 @@ def calculer_tresorerie_quotidienne(df):
     flux_journalier = df_treso['Flux'].resample('D').sum().fillna(0)
     return flux_journalier.cumsum()
 
-# --- 3. PRÉDICTION HYBRIDE (UNIQUEMENT POUR LE CA) ---
+# --- 3. PRÉDICTION HYBRIDE (CORRIGÉE) ---
 
 def create_features(df, label=None):
     df = df.copy()
@@ -121,8 +121,14 @@ def create_features(df, label=None):
 def predict_hybrid_ca(series, months_to_predict, trend_factor=1.0):
     """
     Prédit le CA (Top Line) en utilisant AI + Scénario
+    CORRECTION : Le seuil minimum de points historiques a été abaissé.
     """
-    if len(series) < 6: return None
+    # --- CORRECTION DU SEUIL ---
+    # Abaissement du seuil de 6 à 3 points pour permettre la prédiction
+    # même sur un historique court.
+    if len(series) < 3:
+        return None
+    # --- FIN CORRECTION ---
 
     # Préparation des données
     df = pd.DataFrame({'y': series})
@@ -165,7 +171,7 @@ def predict_hybrid_ca(series, months_to_predict, trend_factor=1.0):
     
     return pd.Series(final_pred, index=future_dates)
 
-# --- 4. INTERFACE ---
+# --- 4. INTERFACE (CORRIGÉE) ---
 
 st.sidebar.header("Paramètres")
 api_key = st.sidebar.text_input("Clé API Gemini", type="password")
@@ -209,6 +215,10 @@ if uploaded_files:
 
             # --- CALCUL DES PRÉDICTIONS COHÉRENTES ---
             # 1. On prédit le CA avec l'AI (Top Line)
+            # --- DEBUG ---
+            # Affiche le nombre de points historiques pour vérifier si la prédiction est possible
+            st.write(f"Debug: Nombre de mois d'historique disponibles pour la prédiction : {len(df_mensuel)}")
+            # --- FIN DEBUG ---
             pred_ca = predict_hybrid_ca(df_mensuel['CA'], months_pred, trend_factor)
             
             if pred_ca is not None:
@@ -232,6 +242,8 @@ if uploaded_files:
                     current_cash += res
                     pred_treso.append(current_cash)
                 pred_treso = pd.Series(pred_treso, index=pred_ca.index)
+            else:
+                st.warning("Attention : Historique insuffisant pour générer une prédiction fiable (moins de 3 mois).")
 
             col1, col2 = st.columns(2)
 
@@ -275,9 +287,18 @@ if uploaded_files:
             # GRAPHIQUE 4 : TRÉSORERIE (CORRIGÉ)
             with col4:
                 fig_tr = go.Figure()
-                # Historique (lissé au mois pour l'affichage global)
-                treso_mensuelle_hist = serie_treso_jour.resample('ME').last()
-                fig_tr.add_trace(go.Scatter(x=treso_mensuelle_hist.index, y=treso_mensuelle_hist, mode='lines', name='Historique', fill='tozeroy', line=dict(color='#9467bd', width=2)))
+                # --- CORRECTION DE L'AFFICHAGE HISTORIQUE ---
+                # Utilisation des données journalières (serie_treso_jour) au lieu du resampling mensuel
+                # pour éviter l'effet d'escalier et montrer une courbe fluide.
+                fig_tr.add_trace(go.Scatter(
+                    x=serie_treso_jour.index,
+                    y=serie_treso_jour.values,
+                    mode='lines',
+                    name='Historique (Journalier)',
+                    fill='tozeroy',
+                    line=dict(color='#9467bd', width=1.5) # Ligne légèrement plus fine pour le détail
+                ))
+                # --- FIN DE LA CORRECTION ---
 
                 if pred_ca is not None:
                      fig_tr.add_trace(go.Scatter(x=pred_treso.index, y=pred_treso, mode='lines', name='Prévision (Cumul Résultat)', 
