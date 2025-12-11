@@ -17,15 +17,12 @@ st.set_page_config(page_title="KPI Restauration - STC", layout="wide")
 # --- CONFIGURATION FICHIERS & URL ---
 LOGO_URL = "https://scontent-mrs2-3.xx.fbcdn.net/v/t1.15752-9/593989620_2217848631958856_7080388737174534799_n.png?stp=dst-png_p394x394&_nc_cat=104&ccb=1-7&_nc_sid=0024fc&_nc_ohc=Rkmg6RI2seYQ7kNvwHe0B0i&_nc_oc=AdlAv8BhqxR27G2lrlER10hKoJbxWWIaOYh_MoFdUMTGRD1co3jYPzFyucWERnVzeHM&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=scontent-mrs2-3.xx&oh=03_Q7cD4AFbWq-h_BtPiU15YRrwm39u0HJtb-bB6ujQEuOrM6JIpQ&oe=6960DB09"
 
-# Fichiers textes
 ADVICE_FILE = "conseil_entreprises.txt"
-PROFILE_FILE = "rapport_profils_detaille.txt" # NOUVEAU FICHIER PROFILS
-
+PROFILE_FILE = "rapport_profils_detaille.txt"
 DATA_ROOT_DIR = "FEC_site"
 
-# --- 0. CONFIGURATION & DONNÉES ---
+# --- 0. DONNÉES ---
 EVENTS_DB = [
-    # Passé
     {"date": "2021-05-19", "label": "Terrasses", "color": "#FFFF00"},
     {"date": "2021-06-09", "label": "Salles", "color": "#FFFF00"},
     {"date": "2021-08-09", "label": "Pass Sanitaire", "color": "#FFAE00"},
@@ -34,7 +31,6 @@ EVENTS_DB = [
     {"date": "2023-09-08", "label": "Rugby WC", "color": "#33FF57"},
     {"date": "2023-10-07", "label": "Guerre Gaza", "color": "#FF0000"},
     {"date": "2024-07-26", "label": "JO Paris", "color": "#33A1FF"},
-    # Futur
     {"date": "2025-01-20", "label": "Tarifs Trump", "color": "#800080"},
     {"date": "2026-06-11", "label": "Mondial Foot 26", "color": "#33FF57"},
     {"date": "2027-04-10", "label": "Présidentielle FR", "color": "#0000FF"},
@@ -160,7 +156,6 @@ def predict_gemini_forecasting(series_history, months_to_predict, trend_factor, 
         if json_match:
             clean_json = json_match.group(0)
             predicted_values = json.loads(clean_json)
-            
             if len(predicted_values) > months_to_predict:
                 predicted_values = predicted_values[:months_to_predict]
             elif len(predicted_values) < months_to_predict:
@@ -185,22 +180,40 @@ def load_text_database(filepath):
         if not os.path.exists(filepath): return {}
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
+        
+        # On découpe par le marqueur "DOSSIER :"
         sections = re.split(r'(DOSSIER\s*:\s*)', content)
+        
         for i in range(1, len(sections), 2):
             body = sections[i+1]
-            dossier_id = body.strip().split('\n')[0].split()[0].strip()
+            
+            # Extraction propre de l'ID (première ligne, premier mot)
+            first_line = body.strip().split('\n')[0]
+            # On nettoie pour ne garder que le code (ex: "000003")
+            dossier_id = first_line.split()[0].strip()
+            
             full_text = sections[i] + body
+            # Nettoyage des séparateurs de fin
             db[dossier_id] = full_text.split("...................")[0].strip()
+            
         return db
-    except: return {}
+    except Exception as e:
+        # st.error(f"Erreur lecture fichier {filepath}: {e}")
+        return {}
 
 def get_text_from_db(company_folder_name, db):
     if not db: return None
+    
+    # 1. Correspondance Exacte
     if company_folder_name in db:
         return db[company_folder_name]
-    # Recherche partielle
-    key = next((k for k in db if k in company_folder_name), None)
-    return db[key] if key else None
+        
+    # 2. Correspondance Partielle (si le dossier est "000003_NOM" et la clé "000003")
+    for key in db.keys():
+        if key in company_folder_name or company_folder_name in key:
+            return db[key]
+            
+    return None
 
 # --- 5. FONCTIONS LECTURE & MATHS ---
 
@@ -385,20 +398,21 @@ if all_dfs:
     df_treso = calculer_tresorerie_quotidienne(df_global)
 
     if not df_m.empty:
-        months_pred = 6
-        last_m = df_m.iloc[-1]
-        
-        # --- NOUVEAU : AFFICHAGE DU PROFIL DE L'ENTREPRISE (AU DÉBUT) ---
+        # --- 1. AFFICHAGE DU PROFIL (IMMEDIATEMENT EN HAUT) ---
         profil_db = load_text_database(PROFILE_FILE)
         profil_text = get_text_from_db(selected_company, profil_db)
         
         if profil_text:
-            with st.expander("👤 Profil & Identité de l'Entreprise", expanded=True):
-                st.info(f"**Analyse du profil :**\n\n{profil_text}")
-        
-        st.markdown("---")
+            with st.expander(f"👤 Profil Stratégique : {selected_company}", expanded=True):
+                st.markdown(f"```text\n{profil_text}\n```")
+        else:
+            st.info("ℹ️ Aucun profil détaillé disponible pour cette entreprise dans le fichier texte.")
 
-        # KPI
+        # --- 2. KPI ---
+        st.markdown("---")
+        months_pred = 6
+        last_m = df_m.iloc[-1]
+        
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("CA Mensuel (Dernier)", format_fr_currency(last_m['CA']))
         c2.metric("EBITDA (Dernier)", format_fr_currency(last_m['EBITDA']))
