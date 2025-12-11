@@ -8,7 +8,6 @@ import io
 import google.generativeai as genai
 import re
 import zipfile
-import os
 
 # Configuration de la page
 st.set_page_config(page_title="KPI Restauration - STC", layout="wide")
@@ -33,6 +32,7 @@ EVENTS_DB = [
 # --- 1. FONCTIONS UTILITAIRES ---
 
 def clear_fec_cache():
+    """Vide le cache de session"""
     if "fec_uploader" in st.session_state:
         st.session_state["fec_uploader"] = None
 
@@ -110,43 +110,58 @@ def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
 
 @st.cache_data
 def load_advice_database(filepath):
-    """Lit le fichier texte et crée un dictionnaire {ID_DOSSIER: TEXTE_COMPLET}"""
+    """Lit le fichier texte et crée un dictionnaire {NOM_DOSSIER: TEXTE_COMPLET}"""
     advice_db = {}
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
         
+        # Découpage par "DOSSIER :"
         sections = re.split(r'(DOSSIER\s*:\s*)', content)
         
         for i in range(1, len(sections), 2):
             header_marker = sections[i] 
             body = sections[i+1] 
+            
+            # Extraction de l'ID (ex: "000003" dans "000003  (Exercice 2025)...")
             first_line = body.strip().split('\n')[0]
-            dossier_id = first_line.split()[0].strip()
+            dossier_id = first_line.split()[0].strip() # "000003"
+            
             full_text = header_marker + body
-            full_text = full_text.split("...................")[0]
+            full_text = full_text.split("...................")[0] # Nettoyage fin
+            
+            # Stockage avec l'ID comme clé
             advice_db[dossier_id] = full_text.strip()
             
         return advice_db
     except Exception as e:
         return {}
 
-def get_advice_from_txt(company_name, advice_db):
-    """Cherche le conseil correspondant au nom du dossier (Entreprise)"""
+def get_advice_from_txt(company_folder_name, advice_db):
+    """
+    Cherche le conseil correspondant au nom du dossier sélectionné.
+    Ex: Si folder="000003", on cherche la clé "000003" dans le fichier texte.
+    """
     if not advice_db:
         return "❌ Base de données de conseils vide ou fichier 'conseil_entreprises.txt' introuvable."
     
-    found_key = None
-    # Recherche flexible : si l'ID (ex: 000003) est présent dans le nom du dossier sélectionné
-    for db_id in advice_db.keys():
-        if db_id in company_name:
-            found_key = db_id
-            break
-            
-    if found_key:
-        return f"### 📄 Rapport Dossier {found_key}\n\n```text\n{advice_db[found_key]}\n```"
+    # Recherche exacte ou partielle
+    found_text = None
+    
+    # 1. Tentative de correspondance exacte (Le nom du dossier EST l'ID)
+    if company_folder_name in advice_db:
+        found_text = advice_db[company_folder_name]
     else:
-        return f"⚠️ Aucun rapport pré-généré trouvé pour l'entreprise : **{company_name}**.\n\nVérifiez que l'identifiant (ex: 000003) est présent dans le nom du dossier ou dans le fichier texte."
+        # 2. Tentative de correspondance partielle (L'ID est DANS le nom du dossier)
+        for db_id, text in advice_db.items():
+            if db_id in company_folder_name:
+                found_text = text
+                break
+            
+    if found_text:
+        return f"### 📄 Rapport Dossier {company_folder_name}\n\n```text\n{found_text}\n```"
+    else:
+        return f"⚠️ Aucun rapport pré-généré trouvé pour le dossier : **{company_folder_name}**.\n\nAssurez-vous que le nom du dossier (ex: 000003) correspond à une entrée 'DOSSIER :' dans le fichier texte."
 
 # --- 3. FONCTIONS DE LECTURE & ZIP ---
 
@@ -179,11 +194,7 @@ def clean_financial_number(series):
     return pd.to_numeric(s, errors='coerce').fillna(0.0)
 
 def load_fec_robust(file_interface):
-    """
-    Charge un fichier FEC depuis un objet fichier (BytesIO ou fichier zip ouvert)
-    """
     try:
-        # Lecture du contenu brut
         if hasattr(file_interface, 'read'):
             content_bytes = file_interface.read()
         else:
@@ -214,8 +225,7 @@ def load_fec_robust(file_interface):
         else: return None
 
         return df
-    except Exception as e:
-        # print(f"Erreur chargement FEC : {e}")
+    except Exception:
         return None
 
 def calculer_indicateurs_mensuels(df):
@@ -305,7 +315,7 @@ st.sidebar.header("📂 Données Entreprises")
 col_suppr, col_upload = st.sidebar.columns([0.2, 0.8])
 st.sidebar.button("🗑️", on_click=clear_fec_cache, help="Efface le fichier chargé")
 
-# --- NOUVEAU : CHARGEMENT DU ZIP ---
+# --- CHARGEMENT ZIP ---
 uploaded_zip = st.sidebar.file_uploader("Charger le fichier 'FEC.zip'", type="zip", key="fec_uploader")
 
 selected_company_name = None
@@ -318,9 +328,16 @@ if uploaded_zip:
             all_files = z.namelist()
             
             # 2. Identifier les dossiers (Entreprises)
-            # On cherche les chemins qui ont au moins un dossier racine
-            # Ex: "000003/FEC_2024.csv" -> "000003"
-            companies = sorted(list(set([f.split('/')[0] for f in all_files if '/' in f and not f.startswith('__MACOSX')])))
+            # On cherche les éléments qui sont des dossiers à la racine (pas __MACOSX)
+            # Logique : On split par '/' et on prend le premier élément s'il y a des sous-éléments
+            root_folders = set()
+            for path in all_files:
+                parts = path.split('/')
+                # Si 'parts' a plus de 1 élément, parts[0] est le dossier racine
+                if len(parts) > 1 and parts[0] != "__MACOSX":
+                    root_folders.add(parts[0])
+            
+            companies = sorted(list(root_folders))
             
             if not companies:
                 st.error("Aucun dossier d'entreprise trouvé dans le ZIP. Vérifiez la structure.")
@@ -328,25 +345,27 @@ if uploaded_zip:
                 # 3. Sélecteur d'entreprise
                 selected_company_name = st.sidebar.selectbox("🏢 Choisir l'entreprise :", companies)
                 
-                # 4. Charger les fichiers de l'entreprise sélectionnée
+                # 4. Charger les fichiers UNIQUEMENT de l'entreprise sélectionnée
                 if selected_company_name:
                     st.sidebar.success(f"Dossier sélectionné : {selected_company_name}")
                     
-                    # On filtre les fichiers qui appartiennent à ce dossier
-                    company_files = [f for f in all_files if f.startswith(selected_company_name + "/") and (f.endswith('.csv') or f.endswith('.txt'))]
+                    # Filtre : Fichiers qui commencent par le nom du dossier + sont des CSV/TXT
+                    company_files = [f for f in all_files if f.startswith(f"{selected_company_name}/") and (f.lower().endswith('.csv') or f.lower().endswith('.txt'))]
                     
-                    with st.spinner(f"Lecture des {len(company_files)} fichiers FEC pour {selected_company_name}..."):
-                        for filename in company_files:
-                            # On ouvre le fichier dans le ZIP
-                            with z.open(filename) as f:
-                                df = load_fec_robust(f)
-                                if df is not None:
-                                    all_dfs.append(df)
+                    if not company_files:
+                        st.sidebar.warning(f"Aucun fichier CSV/TXT trouvé dans le dossier {selected_company_name}")
+                    else:
+                        with st.spinner(f"Lecture des {len(company_files)} fichiers FEC..."):
+                            for filename in company_files:
+                                with z.open(filename) as f:
+                                    df = load_fec_robust(f)
+                                    if df is not None:
+                                        all_dfs.append(df)
 
     except zipfile.BadZipFile:
         st.error("Le fichier chargé n'est pas un ZIP valide.")
 
-# --- SUITE DU DASHBOARD ---
+# --- SUITE DASHBOARD ---
 
 horizon_years = st.sidebar.slider("Horizon prédiction (années)", 1, 3, 2)
 
