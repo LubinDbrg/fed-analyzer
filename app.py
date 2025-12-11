@@ -86,7 +86,98 @@ def show_zoomed_chart(fig_base, title, start_date, end_date):
     st.plotly_chart(fig_zoom, use_container_width=True)
     st.info("Les lignes pointillées représentent les évènements extra-financiers.")
 
-# --- 3. MOTEURS LLM (GEMINI) ---
+# --- 3. FONCTION D'AFFICHAGE "JOLI" DU RAPPORT TEXTE ---
+
+def display_structured_advice(raw_text):
+    """
+    Transforme le texte brut du rapport en composants Streamlit visuels.
+    """
+    if not raw_text or "⚠️" in raw_text or "❌" in raw_text:
+        st.warning(raw_text)
+        return
+
+    # 1. Extraction des métadonnées (Santé, Score, Cluster)
+    score = "N/A"
+    sante = "Inconnue"
+    sante_color = "gray"
+    
+    # Regex pour capturer "SANTÉ : 🟢 ROBUSTE (Score: 80/100)"
+    match_sante = re.search(r'SANTÉ\s*:\s*(.*?)\s*\(Score:\s*(\d+)', raw_text)
+    if match_sante:
+        sante_raw = match_sante.group(1).strip() # "🟢 ROBUSTE"
+        score = match_sante.group(2)
+        
+        if "ROBUSTE" in sante_raw:
+            sante = "ROBUSTE"
+            sante_color = "green"
+        elif "FRAGILE" in sante_raw:
+            sante = "FRAGILE"
+            sante_color = "orange"
+        elif "CRITIQUE" in sante_raw:
+            sante = "CRITIQUE"
+            sante_color = "red"
+
+    # 2. Extraction du Cluster
+    match_cluster = re.search(r'CLUSTER:\s*(Type \d+)', raw_text)
+    cluster = match_cluster.group(1) if match_cluster else "Non défini"
+
+    # --- AFFICHAGE HEADER ---
+    st.markdown(f"""
+    <div style="padding: 15px; border-radius: 10px; background-color: {'#e8f5e9' if sante_color=='green' else '#fff3e0' if sante_color=='orange' else '#ffebee'}; border: 2px solid {sante_color}; margin-bottom: 20px;">
+        <h3 style="color: {sante_color}; margin:0;">Santé Financière : {sante} (Score : {score}/100)</h3>
+        <p style="margin:0; color: #555;">Classification : <strong>{cluster}</strong></p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 3. Extraction et Affichage des Sections
+    
+    # On sépare le texte par les balises [1], [2], etc.
+    # On nettoie d'abord le header (tout ce qui est avant [1])
+    if "[1]" in raw_text:
+        sections_split = raw_text.split("[1]")
+        body = "[1]" + sections_split[1]
+    else:
+        body = raw_text
+
+    # Section Recommandations (Le plus important)
+    if "[4]" in body:
+        parts = body.split("[4]")
+        analyse_part = parts[0]
+        reco_part = parts[1]
+        
+        # Affichage des recommandations
+        st.subheader("💡 Recommandations Prioritaires")
+        reco_lines = reco_part.split('\n')
+        for line in reco_lines:
+            line = line.strip()
+            if "👉" in line:
+                # Nettoyage
+                clean_line = line.replace("👉", "").strip()
+                # Type d'alerte
+                if "[URGENT]" in clean_line:
+                    st.error(clean_line)
+                elif "[MARGE]" in clean_line or "[RH]" in clean_line:
+                    st.warning(clean_line)
+                elif "[COUTS]" in clean_line:
+                    st.info(clean_line)
+                else:
+                    st.write(f"👉 {clean_line}")
+        
+        st.markdown("---")
+        
+        # Affichage des détails financiers (Sections 1, 2, 3)
+        with st.expander("📊 Détails de l'Audit (Rentabilité, Coûts, Bilan)"):
+            # On remplace les titres de sections par du gras
+            formatted_text = analyse_part.replace("[1]", "**[1]**").replace("[2]", "**[2]**").replace("[3]", "**[3]**")
+            # On affiche le reste comme du code ou du markdown propre
+            st.text(formatted_text.strip())
+            
+    else:
+        # Fallback si le format n'est pas respecté
+        st.text(raw_text)
+
+
+# --- 4. MOTEURS LLM (GEMINI) ---
 
 def get_best_available_model():
     try:
@@ -114,6 +205,7 @@ def generer_conseils_gemini(api_key, stats_dict):
         Tu es un expert CFO en restauration.
         Situation Actuelle : CA={stats_dict['CA']}, EBITDA={stats_dict['EBITDA']}, Résultat={stats_dict['Resultat']}, Trésorerie={stats_dict['Treso']}.
         Mission : Donne 3 conseils stratégiques (Marge, Staff, Cash) pour améliorer la situation.
+        Format : Utilise des titres en gras et des bullet points. Sois direct.
         """
         model = genai.GenerativeModel(model_name)
         with st.spinner(f'🤖 Rédaction des conseils ({model_name})...'):
@@ -170,7 +262,7 @@ def predict_gemini_forecasting(series_history, months_to_predict, trend_factor, 
         print(f"Erreur Gemini Forecasting: {e}")
         return None
 
-# --- 4. LOGIQUE FICHIER TEXTE (PARSER UNIVERSEL) ---
+# --- 5. LOGIQUE FICHIER TEXTE (PARSER UNIVERSEL) ---
 
 @st.cache_data
 def load_text_database(filepath):
@@ -193,9 +285,6 @@ def load_text_database(filepath):
     if not content:
         return db, "Echec lecture (Encodage)"
 
-    # --- MODIFICATION MAJEURE ICI ---
-    # On split sur "DOSSIER :" OU "ENTREPRISE :"
-    # Le regex capture le mot clé et l'ID : ((?:DOSSIER|ENTREPRISE)\s*:\s*[A-Za-z0-9_]+)
     split_pattern = r'((?:DOSSIER|ENTREPRISE)\s*:\s*[A-Za-z0-9_]+)'
     
     try:
@@ -205,12 +294,9 @@ def load_text_database(filepath):
             header = sections[i]  # Ex: "ENTREPRISE : 000003"
             body = sections[i+1]
             
-            # Extraction propre de l'ID après le ":"
             if ":" in header:
                 raw_id = header.split(":", 1)[1].strip()
                 clean_id = "".join(c for c in raw_id if c.isalnum())
-                
-                # Nettoyage body
                 clean_body = body.split('...................')[0].strip()
                 clean_body = clean_body.split('===================')[0].strip()
                 
@@ -225,18 +311,16 @@ def get_text_from_db(company_folder_name, db):
     
     target_id = "".join(c for c in company_folder_name.split('_')[0] if c.isalnum())
     
-    # 1. Match Exact
     if target_id in db:
         return db[target_id]
-        
-    # 2. Match Partiel
+    
     for key in db.keys():
         if key in target_id or target_id in key:
             return db[key]
             
     return None
 
-# --- 5. FONCTIONS LECTURE & MATHS ---
+# --- 6. FONCTIONS LECTURE & MATHS ---
 
 def detect_separator(line):
     return ';' if line.count(';') > line.count(',') else ','
@@ -348,7 +432,7 @@ def predict_hybrid_ca(series, months_to_predict, trend_factor):
         return pd.Series(np.maximum(final_pred, 0), index=future_dates)
     except: return None
 
-# --- 6. INTERFACE PRINCIPALE ---
+# --- 7. INTERFACE PRINCIPALE ---
 
 st.image(LOGO_URL, width=300)
 st.title("📊 Finance & Restauration : Dashboard Hybride")
@@ -503,6 +587,14 @@ if all_dfs:
             else:
                 advice_db, _ = load_text_database(ADVICE_FILE)
                 st.session_state['advice_result'] = get_text_from_db(selected_company, advice_db)
+                if not st.session_state['advice_result']:
+                     # Si pas trouvé dans advice, on regarde si c'est la même structure que le profil
+                     raw_advice = get_text_from_db(selected_company, advice_db)
+                     if raw_advice:
+                         # On appelle la fonction de mise en forme JOLIE
+                         st.session_state['advice_result'] = raw_advice
+                     else:
+                         st.session_state['advice_result'] = "❌ Conseil non trouvé."
 
         # --- AFFICHAGE GRAPHIQUES ---
         min_date, max_date = df_m.index.min(), df_m.index.max() + pd.DateOffset(months=months_pred)
@@ -558,8 +650,13 @@ if all_dfs:
         st.markdown("---")
         st.subheader(f"👨‍🍳 Conseils Stratégiques ({advice_method})")
         
-        if st.session_state.get('advice_result'):
-            st.markdown(st.session_state['advice_result'])
+        # ICI J'UTILISE LA NOUVELLE FONCTION JOLIE
+        raw_advice = st.session_state.get('advice_result')
+        if raw_advice:
+            if "Gemini" in advice_method:
+                st.markdown(raw_advice)
+            else:
+                display_structured_advice(raw_advice)
         else:
             st.info("Cliquez sur '⚡ Lancer la Prédiction' pour générer le rapport.")
 
