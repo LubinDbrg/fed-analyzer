@@ -30,7 +30,7 @@ EVENTS_DB = [
     {"date": "2023-09-08", "label": "Rugby WC", "color": "#33FF57"},
     {"date": "2023-10-07", "label": "Guerre Gaza", "color": "#FF0000"},
     {"date": "2024-07-26", "label": "JO Paris", "color": "#33A1FF"},
-    # Futur (Prochaines années)
+    # Futur
     {"date": "2025-01-20", "label": "Tarifs Trump", "color": "#800080"},
     {"date": "2026-06-11", "label": "Mondial Foot 26", "color": "#33FF57"},
     {"date": "2027-04-10", "label": "Présidentielle FR", "color": "#0000FF"},
@@ -201,6 +201,7 @@ def load_advice_database(filepath):
 
 def get_advice_from_txt(company_folder_name, advice_db):
     if not advice_db: return "❌ Fichier conseils introuvable."
+    # Recherche exacte puis partielle
     if company_folder_name in advice_db:
         key = company_folder_name
     else:
@@ -481,7 +482,8 @@ if all_dfs:
             fig = go.Figure()
             fig.add_trace(go.Bar(x=df_m.index, y=df_m['CA'], name='Historique', marker_color='#1f77b4'))
             if pred_ca is not None:
-                fig.add_trace(go.Bar(x=pred_ca.index, y=pred_ca, name='Prévision', marker_pattern_shape='/', marker_color='#4ad3d8', opacity=0.7))
+                # Couleur Prévision CA : Bleu Clair Cyan
+                fig.add_trace(go.Bar(x=pred_ca.index, y=pred_ca, name='Prévision', marker_pattern_shape='/', marker_color='#33C1FF', opacity=0.7))
             fig.update_layout(title="Chiffre d'Affaires", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
             if st.button("🔍 Zoom CA"): show_zoomed_chart(fig, "CA", min_date, max_date)
             st.plotly_chart(fig, use_container_width=True)
@@ -490,7 +492,8 @@ if all_dfs:
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=df_m.index, y=df_m['EBITDA'], mode='lines+markers', name='Historique', line=dict(color='#ff7f0e', width=3)))
             if pred_ebitda is not None:
-                fig.add_trace(go.Scatter(x=pred_ebitda.index, y=pred_ebitda, mode='lines+markers', name='Prévision', line=dict(color='#00CC96', width=4, dash='dash')))
+                # Couleur Prévision EBITDA : Vert Néon
+                fig.add_trace(go.Scatter(x=pred_ebitda.index, y=pred_ebitda, mode='lines+markers', name='Prévision', line=dict(color='#00E676', width=4, dash='dash')))
             fig.add_hline(y=0, line_color="white", opacity=0.3)
             fig.update_layout(title="EBITDA", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
             if st.button("🔍 Zoom EBITDA"): show_zoomed_chart(fig, "EBITDA", min_date, max_date)
@@ -502,8 +505,8 @@ if all_dfs:
             colors = ['#2ca02c' if v>=0 else '#d62728' for v in df_m['Resultat']]
             fig.add_trace(go.Bar(x=df_m.index, y=df_m['Resultat'], name='Historique', marker_color=colors))
             if pred_res is not None:
-                # CHANGEMENT COULEUR : Bleu Cyan (hachuré) pour bien distinguer
-                fig.add_trace(go.Bar(x=pred_res.index, y=pred_res, name='Prévision', marker_pattern_shape='/', marker_color='#00CC96', opacity=0.8))
+                # CHANGEMENT COULEUR : Jaune Or (hachuré) pour bien distinguer du Vert/Rouge
+                fig.add_trace(go.Bar(x=pred_res.index, y=pred_res, name='Prévision', marker_pattern_shape='/', marker_color='#FFD700', opacity=0.8))
             fig.update_layout(title="Résultat Net", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
             if st.button("🔍 Zoom Résultat"): show_zoomed_chart(fig, "Résultat", min_date, max_date)
             st.plotly_chart(fig, use_container_width=True)
@@ -513,8 +516,8 @@ if all_dfs:
             treso_hist_monthly = df_treso.resample('ME').last()
             fig.add_trace(go.Scatter(x=treso_hist_monthly.index, y=treso_hist_monthly, mode='lines', name='Historique', fill='tozeroy', line=dict(color='#9467bd', width=2)))
             if pred_treso is not None:
-                # CORRECTION TRIANGLE : fill=None
-                fig.add_trace(go.Scatter(x=pred_treso.index, y=pred_treso, mode='lines', name='Prévision', fill=None, line=dict(color='#D670D6', width=3, dash='dash')))
+                # Couleur Prévision Tréso : Rose Vif (Sans remplissage)
+                fig.add_trace(go.Scatter(x=pred_treso.index, y=pred_treso, mode='lines', name='Prévision', fill=None, line=dict(color='#FF4081', width=3, dash='dash')))
             fig.add_hline(y=0, line_color="red", line_dash="dot")
             fig.update_layout(title="Trésorerie", height=350, template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
             if st.button("🔍 Zoom Tréso"): show_zoomed_chart(fig, "Trésorerie", min_date, max_date)
