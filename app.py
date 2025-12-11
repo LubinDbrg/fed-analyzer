@@ -170,47 +170,66 @@ def predict_gemini_forecasting(series_history, months_to_predict, trend_factor, 
         print(f"Erreur Gemini Forecasting: {e}")
         return None
 
-# --- 4. LOGIQUE FICHIER TEXTE (PROFILS & CONSEILS) ---
+# --- 4. LOGIQUE FICHIER TEXTE (ROBUSTE) ---
 
 @st.cache_data
 def load_text_database(filepath):
-    """Charge un fichier texte structuré par 'DOSSIER :'"""
+    """
+    Charge un fichier texte avec un parser Regex robuste.
+    Cherche 'DOSSIER : [CODE]' peu importe les espaces.
+    """
     db = {}
+    if not os.path.exists(filepath):
+        return db
+        
     try:
-        if not os.path.exists(filepath): return {}
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, "r", encoding="utf-8", errors='replace') as f:
             content = f.read()
+            
+        # Regex pour trouver le titre du dossier : DOSSIER + espaces + : + espaces + Code
+        # On découpe le fichier par blocs
+        # Pattern explicite : (DOSSIER\s*:\s*[A-Za-z0-9_]+)
+        split_pattern = r'(DOSSIER\s*:\s*[A-Za-z0-9_]+)'
         
-        # On découpe par le marqueur "DOSSIER :"
-        sections = re.split(r'(DOSSIER\s*:\s*)', content)
+        parts = re.split(split_pattern, content)
         
-        for i in range(1, len(sections), 2):
-            body = sections[i+1]
+        # parts[0] est le texte avant le premier dossier (souvent l'intro)
+        # Ensuite ça va par paire : [Titre, Contenu, Titre, Contenu...]
+        
+        for i in range(1, len(parts), 2):
+            title_line = parts[i].strip() # Ex: "DOSSIER : 000003"
+            body = parts[i+1].strip()
             
-            # Extraction propre de l'ID (première ligne, premier mot)
-            first_line = body.strip().split('\n')[0]
-            # On nettoie pour ne garder que le code (ex: "000003")
-            dossier_id = first_line.split()[0].strip()
+            # Extraction propre de l'ID depuis la ligne de titre
+            # On cherche juste le code alphanumérique après les deux points
+            match_id = re.search(r':\s*([A-Za-z0-9_]+)', title_line)
             
-            full_text = sections[i] + body
-            # Nettoyage des séparateurs de fin
-            db[dossier_id] = full_text.split("...................")[0].strip()
-            
+            if match_id:
+                dossier_id = match_id.group(1).strip()
+                # On nettoie le contenu des séparateurs de fin (...)
+                clean_body = body.split('...................')[0].strip()
+                
+                # On reconstruit un affichage propre
+                full_content = f"{title_line}\n\n{clean_body}"
+                db[dossier_id] = full_content
+                
         return db
     except Exception as e:
-        # st.error(f"Erreur lecture fichier {filepath}: {e}")
+        st.error(f"Erreur de lecture du fichier {filepath} : {e}")
         return {}
 
 def get_text_from_db(company_folder_name, db):
+    """Récupère le texte associé à un dossier (Match exact ou partiel)"""
     if not db: return None
     
     # 1. Correspondance Exacte
     if company_folder_name in db:
         return db[company_folder_name]
-        
-    # 2. Correspondance Partielle (si le dossier est "000003_NOM" et la clé "000003")
+    
+    # 2. Correspondance Partielle (Ex: "000003" dans "000003_NOM")
+    # On parcourt les clés de la DB (ex: "000003") et on regarde si elle est dans le nom du dossier
     for key in db.keys():
-        if key in company_folder_name or company_folder_name in key:
+        if key in company_folder_name:
             return db[key]
             
     return None
@@ -386,6 +405,10 @@ api_key_input = None
 if "Gemini" in forecast_method or "Gemini" in advice_method:
     api_key_input = st.sidebar.text_input("🔑 Clé API Gemini", type="password")
 
+# --- DEBUG : AFFICHER LES PROFILS TROUVÉS (TEMPORAIRE SI BESOIN) ---
+# profil_db_test = load_text_database(PROFILE_FILE)
+# st.sidebar.write(f"Profils chargés : {list(profil_db_test.keys())}")
+
 # --- BOUTON DE LANCEMENT (CACHE) ---
 st.sidebar.markdown("---")
 launch_calc = st.sidebar.button("⚡ Lancer la Prédiction (Tous Scénarios)")
@@ -406,7 +429,8 @@ if all_dfs:
             with st.expander(f"👤 Profil Stratégique : {selected_company}", expanded=True):
                 st.markdown(f"```text\n{profil_text}\n```")
         else:
-            st.info("ℹ️ Aucun profil détaillé disponible pour cette entreprise dans le fichier texte.")
+            # Message d'aide si non trouvé
+            st.info(f"ℹ️ Pas de profil trouvé pour '{selected_company}' dans '{PROFILE_FILE}'. Vérifiez que le nom du dossier est bien dans le fichier texte.")
 
         # --- 2. KPI ---
         st.markdown("---")
