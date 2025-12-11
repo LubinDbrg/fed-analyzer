@@ -8,13 +8,17 @@ import io
 import google.generativeai as genai
 import re
 import zipfile
+import os
 
 # Configuration de la page
 st.set_page_config(page_title="KPI Restauration - STC", layout="wide")
 
 # --- CONFIGURATION FICHIERS & URL ---
 LOGO_URL = "https://scontent-mrs2-3.xx.fbcdn.net/v/t1.15752-9/593989620_2217848631958856_7080388737174534799_n.png?stp=dst-png_p394x394&_nc_cat=104&ccb=1-7&_nc_sid=0024fc&_nc_ohc=Rkmg6RI2seYQ7kNvwHe0B0i&_nc_oc=AdlAv8BhqxR27G2lrlER10hKoJbxWWIaOYh_MoFdUMTGRD1co3jYPzFyucWERnVzeHM&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=scontent-mrs2-3.xx&oh=03_Q7cD4AFbWq-h_BtPiU15YRrwm39u0HJtb-bB6ujQEuOrM6JIpQ&oe=6960DB09"
+
+# Fichiers locaux (Doivent être présents dans le dépôt GitHub/Dossier)
 ADVICE_FILE = "conseil_entreprises.txt"
+DATA_ZIP_FILE = "FEC.zip" 
 
 # --- 0. CONFIGURATION & DONNÉES ---
 EVENTS_DB = [
@@ -30,11 +34,6 @@ EVENTS_DB = [
 ]
 
 # --- 1. FONCTIONS UTILITAIRES ---
-
-def clear_fec_cache():
-    """Vide le cache de session"""
-    if "fec_uploader" in st.session_state:
-        st.session_state["fec_uploader"] = None
 
 def format_fr_currency(value):
     """Formate un nombre avec un POINT pour les milliers et ajoute €."""
@@ -110,27 +109,24 @@ def generer_conseils_gemini(api_key, stats_dict, scenario_nom):
 
 @st.cache_data
 def load_advice_database(filepath):
-    """Lit le fichier texte et crée un dictionnaire {NOM_DOSSIER: TEXTE_COMPLET}"""
+    """Lit le fichier texte et crée un dictionnaire {ID_DOSSIER: TEXTE_COMPLET}"""
     advice_db = {}
     try:
+        if not os.path.exists(filepath):
+            return {}
+            
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
         
-        # Découpage par "DOSSIER :"
         sections = re.split(r'(DOSSIER\s*:\s*)', content)
         
         for i in range(1, len(sections), 2):
             header_marker = sections[i] 
             body = sections[i+1] 
-            
-            # Extraction de l'ID (ex: "000003" dans "000003  (Exercice 2025)...")
             first_line = body.strip().split('\n')[0]
-            dossier_id = first_line.split()[0].strip() # "000003"
-            
+            dossier_id = first_line.split()[0].strip()
             full_text = header_marker + body
-            full_text = full_text.split("...................")[0] # Nettoyage fin
-            
-            # Stockage avec l'ID comme clé
+            full_text = full_text.split("...................")[0]
             advice_db[dossier_id] = full_text.strip()
             
         return advice_db
@@ -138,30 +134,25 @@ def load_advice_database(filepath):
         return {}
 
 def get_advice_from_txt(company_folder_name, advice_db):
-    """
-    Cherche le conseil correspondant au nom du dossier sélectionné.
-    Ex: Si folder="000003", on cherche la clé "000003" dans le fichier texte.
-    """
+    """Cherche le conseil correspondant au nom du dossier"""
     if not advice_db:
         return "❌ Base de données de conseils vide ou fichier 'conseil_entreprises.txt' introuvable."
     
-    # Recherche exacte ou partielle
-    found_text = None
-    
-    # 1. Tentative de correspondance exacte (Le nom du dossier EST l'ID)
+    # Recherche : le nom du dossier (ex: 000003) doit être dans les clés du fichier txt
+    found_key = None
     if company_folder_name in advice_db:
-        found_text = advice_db[company_folder_name]
+        found_key = company_folder_name
     else:
-        # 2. Tentative de correspondance partielle (L'ID est DANS le nom du dossier)
-        for db_id, text in advice_db.items():
+        # Fallback : recherche partielle
+        for db_id in advice_db.keys():
             if db_id in company_folder_name:
-                found_text = text
+                found_key = db_id
                 break
             
-    if found_text:
-        return f"### 📄 Rapport Dossier {company_folder_name}\n\n```text\n{found_text}\n```"
+    if found_key:
+        return f"### 📄 Rapport Dossier {found_key}\n\n```text\n{advice_db[found_key]}\n```"
     else:
-        return f"⚠️ Aucun rapport pré-généré trouvé pour le dossier : **{company_folder_name}**.\n\nAssurez-vous que le nom du dossier (ex: 000003) correspond à une entrée 'DOSSIER :' dans le fichier texte."
+        return f"⚠️ Aucun rapport pré-généré trouvé pour l'entreprise : **{company_folder_name}**.\n\nAssurez-vous que le fichier `conseil_entreprises.txt` contient bien une entrée commençant par `DOSSIER : {company_folder_name}`."
 
 # --- 3. FONCTIONS DE LECTURE & ZIP ---
 
@@ -195,11 +186,7 @@ def clean_financial_number(series):
 
 def load_fec_robust(file_interface):
     try:
-        if hasattr(file_interface, 'read'):
-            content_bytes = file_interface.read()
-        else:
-            content_bytes = file_interface.getvalue()
-
+        content_bytes = file_interface.read()
         try: content = content_bytes.decode('latin-1')
         except: content = content_bytes.decode('utf-8', errors='ignore')
         
@@ -311,59 +298,69 @@ st.image(LOGO_URL, width=300)
 
 st.title("📊 Finance & Restauration : Dashboard Hybride")
 
-st.sidebar.header("📂 Données Entreprises")
-col_suppr, col_upload = st.sidebar.columns([0.2, 0.8])
-st.sidebar.button("🗑️", on_click=clear_fec_cache, help="Efface le fichier chargé")
+st.sidebar.header("📂 Sélection Entreprise")
 
-# --- CHARGEMENT ZIP ---
-uploaded_zip = st.sidebar.file_uploader("Charger le fichier 'FEC.zip'", type="zip", key="fec_uploader")
+# --- CHARGEMENT AUTOMATIQUE DU ZIP ---
+companies = []
+zip_file_obj = None
 
+# Vérification présence du fichier ZIP
+if os.path.exists(DATA_ZIP_FILE):
+    try:
+        zip_file_obj = zipfile.ZipFile(DATA_ZIP_FILE, "r")
+        all_files = zip_file_obj.namelist()
+        
+        # Identification des dossiers racines (ex: "000003/")
+        root_folders = set()
+        for path in all_files:
+            parts = path.split('/')
+            # On prend le premier dossier s'il n'est pas système
+            if len(parts) > 1 and parts[0] != "__MACOSX" and parts[0] != "":
+                root_folders.add(parts[0])
+        
+        companies = sorted(list(root_folders))
+        
+    except zipfile.BadZipFile:
+        st.sidebar.error("❌ Erreur : Le fichier 'FEC.zip' est corrompu.")
+else:
+    st.sidebar.error(f"❌ Fichier '{DATA_ZIP_FILE}' introuvable dans le dépôt.")
+
+# --- SÉLECTEUR D'ENTREPRISE ---
 selected_company_name = None
 all_dfs = []
 
-if uploaded_zip:
-    try:
-        with zipfile.ZipFile(uploaded_zip, "r") as z:
-            # 1. Lister tous les fichiers
-            all_files = z.namelist()
+if companies:
+    selected_company_name = st.sidebar.selectbox(
+        "🏢 Choisir l'entreprise à analyser :", 
+        companies,
+        index=0
+    )
+    
+    if selected_company_name and zip_file_obj:
+        # Chargement des fichiers pour cette entreprise spécifique
+        company_files = [
+            f for f in all_files 
+            if f.startswith(f"{selected_company_name}/") 
+            and (f.lower().endswith('.csv') or f.lower().endswith('.txt'))
+        ]
+        
+        if not company_files:
+            st.sidebar.warning("Dossier vide.")
+        else:
+            with st.spinner(f"Chargement des données : {selected_company_name}..."):
+                for filename in company_files:
+                    try:
+                        with zip_file_obj.open(filename) as f:
+                            df = load_fec_robust(f)
+                            if df is not None:
+                                all_dfs.append(df)
+                    except:
+                        continue
             
-            # 2. Identifier les dossiers (Entreprises)
-            # On cherche les éléments qui sont des dossiers à la racine (pas __MACOSX)
-            # Logique : On split par '/' et on prend le premier élément s'il y a des sous-éléments
-            root_folders = set()
-            for path in all_files:
-                parts = path.split('/')
-                # Si 'parts' a plus de 1 élément, parts[0] est le dossier racine
-                if len(parts) > 1 and parts[0] != "__MACOSX":
-                    root_folders.add(parts[0])
-            
-            companies = sorted(list(root_folders))
-            
-            if not companies:
-                st.error("Aucun dossier d'entreprise trouvé dans le ZIP. Vérifiez la structure.")
+            if all_dfs:
+                st.sidebar.success(f"✅ {len(all_dfs)} fichiers comptables chargés.")
             else:
-                # 3. Sélecteur d'entreprise
-                selected_company_name = st.sidebar.selectbox("🏢 Choisir l'entreprise :", companies)
-                
-                # 4. Charger les fichiers UNIQUEMENT de l'entreprise sélectionnée
-                if selected_company_name:
-                    st.sidebar.success(f"Dossier sélectionné : {selected_company_name}")
-                    
-                    # Filtre : Fichiers qui commencent par le nom du dossier + sont des CSV/TXT
-                    company_files = [f for f in all_files if f.startswith(f"{selected_company_name}/") and (f.lower().endswith('.csv') or f.lower().endswith('.txt'))]
-                    
-                    if not company_files:
-                        st.sidebar.warning(f"Aucun fichier CSV/TXT trouvé dans le dossier {selected_company_name}")
-                    else:
-                        with st.spinner(f"Lecture des {len(company_files)} fichiers FEC..."):
-                            for filename in company_files:
-                                with z.open(filename) as f:
-                                    df = load_fec_robust(f)
-                                    if df is not None:
-                                        all_dfs.append(df)
-
-    except zipfile.BadZipFile:
-        st.error("Le fichier chargé n'est pas un ZIP valide.")
+                st.sidebar.error("Aucun fichier valide n'a pu être lu.")
 
 # --- SUITE DASHBOARD ---
 
@@ -522,14 +519,17 @@ if all_dfs:
                     st.error("Veuillez entrer une clé API Gemini pour utiliser l'IA.")
 
             elif method_choice == "📄 Rapport Pré-généré (Fichier TXT)":
-                # Utilisation du nom de l'entreprise sélectionnée pour trouver le conseil
+                # ICI : ON UTILISE LE NOM DU DOSSIER SELECTIONNE (ex: "000003")
                 rapport_txt = get_advice_from_txt(selected_company_name, advice_db)
-                st.success(f"Rapport chargé pour {selected_company_name} !")
-                st.markdown(rapport_txt)
+                if "❌" in rapport_txt or "⚠️" in rapport_txt:
+                    st.warning(rapport_txt)
+                else:
+                    st.success(f"Rapport chargé pour {selected_company_name} !")
+                    st.markdown(rapport_txt)
         
         else:
             st.info(f"Cliquez pour lancer l'analyse avec la méthode : {method_choice}")
     else:
         st.warning("Aucune donnée valide trouvée dans les fichiers de cette entreprise.")
-elif uploaded_zip:
-    st.info("Veuillez sélectionner une entreprise dans la barre latérale.")
+elif not companies:
+    st.info("Veuillez ajouter le fichier 'FEC.zip' dans le dossier du projet pour commencer.")
