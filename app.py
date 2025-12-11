@@ -498,3 +498,4 @@ if all_dfs:
 
     else:
         st.warning("Données insuffisantes pour l'analyse.")
+
