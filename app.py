@@ -16,7 +16,11 @@ st.set_page_config(page_title="KPI Restauration - STC", layout="wide")
 
 # --- CONFIGURATION FICHIERS & URL ---
 LOGO_URL = "https://scontent-mrs2-3.xx.fbcdn.net/v/t1.15752-9/593989620_2217848631958856_7080388737174534799_n.png?stp=dst-png_p394x394&_nc_cat=104&ccb=1-7&_nc_sid=0024fc&_nc_ohc=Rkmg6RI2seYQ7kNvwHe0B0i&_nc_oc=AdlAv8BhqxR27G2lrlER10hKoJbxWWIaOYh_MoFdUMTGRD1co3jYPzFyucWERnVzeHM&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=scontent-mrs2-3.xx&oh=03_Q7cD4AFbWq-h_BtPiU15YRrwm39u0HJtb-bB6ujQEuOrM6JIpQ&oe=6960DB09"
+
+# Fichiers textes
 ADVICE_FILE = "conseil_entreprises.txt"
+PROFILE_FILE = "rapport_profils_detaille.txt" # NOUVEAU FICHIER PROFILS
+
 DATA_ROOT_DIR = "FEC_site"
 
 # --- 0. CONFIGURATION & DONNÉES ---
@@ -37,17 +41,16 @@ EVENTS_DB = [
     {"date": "2028-07-14", "label": "JO Los Angeles", "color": "#33A1FF"},
 ]
 
-# SCENARIOS & COULEURS
 SCENARIOS = {
-    "Neutre": {"factor": 1.0, "color": "#33C1FF"},      # Bleu Cyan
-    "Optimiste": {"factor": 1.05, "color": "#00E676"},   # Vert Néon
-    "Pessimiste": {"factor": 0.95, "color": "#FF5252"},  # Rouge
-    "Inflation": {"factor": 1.015, "color": "#FFD700"}   # Jaune Or
+    "Neutre": {"factor": 1.0, "color": "#33C1FF"},
+    "Optimiste": {"factor": 1.05, "color": "#00E676"},
+    "Pessimiste": {"factor": 0.95, "color": "#FF5252"},
+    "Inflation": {"factor": 1.015, "color": "#FFD700"}
 }
 
 # --- 1. GESTION SESSION STATE ---
 if 'forecast_data' not in st.session_state:
-    st.session_state['forecast_data'] = {} # Dictionnaire pour stocker les 4 scénarios
+    st.session_state['forecast_data'] = {}
 if 'advice_result' not in st.session_state:
     st.session_state['advice_result'] = None
 if 'last_company' not in st.session_state:
@@ -124,11 +127,7 @@ def generer_conseils_gemini(api_key, stats_dict):
         return f"❌ Erreur IA : {e}"
 
 def predict_gemini_forecasting(series_history, months_to_predict, trend_factor, api_key, scenario_name):
-    """
-    Utilise Gemini pour prédire la série temporelle (6 mois).
-    """
     if not api_key: return None
-    
     try:
         genai.configure(api_key=api_key)
         model_name = get_best_available_model()
@@ -150,14 +149,7 @@ def predict_gemini_forecasting(series_history, months_to_predict, trend_factor, 
         Tu es un expert en prévision financière.
         HISTORIQUE CA : [{history_str}]
         SCÉNARIO : {scenario_name} (Facteur tendance: {trend_factor})
-        
         MISSION : Prédire le CA pour les {months_to_predict} prochains mois.
-        
-        CONTRAINTES :
-        1. Liste de {months_to_predict} valeurs.
-        2. Applique la tendance du scénario ({scenario_name}).
-        3. {future_events_str}
-        
         RÉPONSE : UNIQUEMENT une liste JSON d'entiers. Ex: [12000, 14500]
         """
         
@@ -179,16 +171,16 @@ def predict_gemini_forecasting(series_history, months_to_predict, trend_factor, 
             return pd.Series(predicted_values, index=future_dates)
         else:
             return None
-            
     except Exception as e:
         print(f"Erreur Gemini Forecasting: {e}")
         return None
 
-# --- 4. LOGIQUE FICHIER CONSEILS ---
+# --- 4. LOGIQUE FICHIER TEXTE (PROFILS & CONSEILS) ---
 
 @st.cache_data
-def load_advice_database(filepath):
-    advice_db = {}
+def load_text_database(filepath):
+    """Charge un fichier texte structuré par 'DOSSIER :'"""
+    db = {}
     try:
         if not os.path.exists(filepath): return {}
         with open(filepath, "r", encoding="utf-8") as f:
@@ -198,20 +190,17 @@ def load_advice_database(filepath):
             body = sections[i+1]
             dossier_id = body.strip().split('\n')[0].split()[0].strip()
             full_text = sections[i] + body
-            advice_db[dossier_id] = full_text.split("...................")[0].strip()
-        return advice_db
+            db[dossier_id] = full_text.split("...................")[0].strip()
+        return db
     except: return {}
 
-def get_advice_from_txt(company_folder_name, advice_db):
-    if not advice_db: return "❌ Fichier conseils introuvable."
-    if company_folder_name in advice_db:
-        key = company_folder_name
-    else:
-        key = next((k for k in advice_db if k in company_folder_name), None)
-        
-    if key:
-        return f"### 📄 Rapport Dossier {key}\n\n```text\n{advice_db[key]}\n```"
-    return f"⚠️ Aucun rapport trouvé pour **{company_folder_name}**."
+def get_text_from_db(company_folder_name, db):
+    if not db: return None
+    if company_folder_name in db:
+        return db[company_folder_name]
+    # Recherche partielle
+    key = next((k for k in db if k in company_folder_name), None)
+    return db[key] if key else None
 
 # --- 5. FONCTIONS LECTURE & MATHS ---
 
@@ -308,24 +297,19 @@ def predict_hybrid_ca(series, months_to_predict, trend_factor):
         df = pd.DataFrame({'y': series})
         df = create_features(df)
         X, y = df[['time_idx', 'month', 'quarter']], df['y']
-        
         model_trend = LinearRegression()
         model_trend.fit(df[['time_idx']], y)
         trend_pred = model_trend.predict(df[['time_idx']])
-        
         model_rf = RandomForestRegressor(n_estimators=100)
         model_rf.fit(X, y - trend_pred)
-        
         last_date = series.index[-1]
         future_dates = pd.date_range(start=last_date, periods=months_to_predict + 1, freq='ME')[1:]
         future_df = pd.DataFrame(index=future_dates)
         future_df['month'] = future_df.index.month
         future_df['quarter'] = future_df.index.quarter
         future_df['time_idx'] = np.arange(len(df), len(df) + months_to_predict)
-        
         future_trend = model_trend.predict(future_df[['time_idx']])
         future_residuals = model_rf.predict(future_df[['time_idx', 'month', 'quarter']])
-        
         final_pred = (future_trend + future_residuals) * np.linspace(1, trend_factor, len(future_trend))
         return pd.Series(np.maximum(final_pred, 0), index=future_dates)
     except: return None
@@ -404,6 +388,16 @@ if all_dfs:
         months_pred = 6
         last_m = df_m.iloc[-1]
         
+        # --- NOUVEAU : AFFICHAGE DU PROFIL DE L'ENTREPRISE (AU DÉBUT) ---
+        profil_db = load_text_database(PROFILE_FILE)
+        profil_text = get_text_from_db(selected_company, profil_db)
+        
+        if profil_text:
+            with st.expander("👤 Profil & Identité de l'Entreprise", expanded=True):
+                st.info(f"**Analyse du profil :**\n\n{profil_text}")
+        
+        st.markdown("---")
+
         # KPI
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("CA Mensuel (Dernier)", format_fr_currency(last_m['CA']))
@@ -415,7 +409,6 @@ if all_dfs:
 
         # --- LOGIQUE DE CALCUL MULTI-SCENARIOS ---
         if launch_calc:
-            # 1. Calcul des 4 scénarios
             with st.spinner(f'Calcul des {len(SCENARIOS)} scénarios en cours ({forecast_method})...'):
                 
                 scenarios_results = {}
@@ -424,7 +417,6 @@ if all_dfs:
                     trend_factor = scenario_params["factor"]
                     pred_ca = None
                     
-                    # Prévision CA
                     if "Hybride" in forecast_method:
                         pred_ca = predict_hybrid_ca(df_m['CA'], months_pred, trend_factor)
                     elif "Gemini" in forecast_method:
@@ -434,7 +426,6 @@ if all_dfs:
                             st.error("⚠️ Clé API requise.")
                             break
 
-                    # Dérivés
                     pred_ebitda, pred_res, pred_treso = None, None, None
                     if pred_ca is not None:
                         last_12 = df_m.iloc[-12:] if len(df_m) >= 12 else df_m
@@ -445,7 +436,6 @@ if all_dfs:
                         pred_ebitda = pred_ca * marge_ebitda
                         pred_res = pred_ebitda - ecart_res
                         
-                        # Tréso
                         start_treso = df_treso.iloc[-1] if not df_treso.empty else 0
                         treso_list = []
                         curr = start_treso
@@ -460,14 +450,13 @@ if all_dfs:
 
                 st.session_state['forecast_data'] = scenarios_results
                 
-            # 2. Génération Conseil (Unique sur scénario Neutre)
             if "Gemini" in advice_method:
                 if api_key_input:
                     stats = {k: format_fr_currency(v) for k,v in {'CA': last_m['CA'], 'EBITDA': last_m['EBITDA'], 'Resultat': last_m['Resultat'], 'Treso': df_treso.iloc[-1]}.items()}
                     st.session_state['advice_result'] = generer_conseils_gemini(api_key_input, stats)
             else:
-                advice_db = load_advice_database(ADVICE_FILE)
-                st.session_state['advice_result'] = get_advice_from_txt(selected_company, advice_db)
+                advice_db = load_text_database(ADVICE_FILE)
+                st.session_state['advice_result'] = get_text_from_db(selected_company, advice_db)
 
         # --- AFFICHAGE GRAPHIQUES ---
         min_date, max_date = df_m.index.min(), df_m.index.max() + pd.DateOffset(months=months_pred)
@@ -477,7 +466,6 @@ if all_dfs:
         with col1: # CA
             fig = go.Figure()
             fig.add_trace(go.Bar(x=df_m.index, y=df_m['CA'], name='Historique', marker_color='#1f77b4'))
-            # Boucle sur les 4 scénarios
             for s_name, s_data in forecasts.items():
                 if s_data['ca'] is not None:
                     fig.add_trace(go.Scatter(x=s_data['ca'].index, y=s_data['ca'], name=f'Scénario {s_name}', line=dict(color=SCENARIOS[s_name]['color'], width=3, dash='dot')))
@@ -520,14 +508,14 @@ if all_dfs:
             if st.button("🔍 Zoom Tréso"): show_zoomed_chart(fig, "Trésorerie", min_date, max_date)
             st.plotly_chart(fig, use_container_width=True)
 
-        # --- AFFICHAGE CONSEILS (STOCKE EN CACHE) ---
+        # --- AFFICHAGE CONSEILS ---
         st.markdown("---")
         st.subheader(f"👨‍🍳 Conseils Stratégiques ({advice_method})")
         
         if st.session_state.get('advice_result'):
             st.markdown(st.session_state['advice_result'])
         else:
-            st.info("Cliquez sur '⚡ Lancer la Prédiction' pour générer le rapport et les 4 scénarios.")
+            st.info("Cliquez sur '⚡ Lancer la Prédiction' pour générer le rapport.")
 
     else:
         st.warning("Données insuffisantes pour l'analyse.")
