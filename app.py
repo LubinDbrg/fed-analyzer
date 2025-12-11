@@ -175,45 +175,44 @@ def predict_gemini_forecasting(series_history, months_to_predict, trend_factor, 
 @st.cache_data
 def load_text_database(filepath):
     """
-    Charge un fichier texte avec un parser 'Tout Terrain'
-    Gère les encodages et les formats "DOSSIER: " vs "DOSSIER :"
+    Charge un fichier texte avec un parser qui accepte DOSSIER ou ENTREPRISE.
     """
     db = {}
     if not os.path.exists(filepath):
         return db, "Fichier introuvable"
         
     content = ""
-    # 1. Tentative de lecture multi-encodage
     for encoding in ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']:
         try:
             with open(filepath, "r", encoding=encoding) as f:
                 content = f.read()
-            break # Si ça marche, on sort
+            break
         except:
             continue
             
     if not content:
         return db, "Echec lecture (Encodage)"
 
-    # 2. Découpage par mot clé "DOSSIER" (Case insensitive)
-    # On cherche "DOSSIER" suivi de n'importe quoi jusqu'à un ":"
-    # Pattern: DOSSIER\s*:\s*([A-Za-z0-9_]+)
+    # --- MODIFICATION MAJEURE ICI ---
+    # On split sur "DOSSIER :" OU "ENTREPRISE :"
+    # Le regex capture le mot clé et l'ID : ((?:DOSSIER|ENTREPRISE)\s*:\s*[A-Za-z0-9_]+)
+    split_pattern = r'((?:DOSSIER|ENTREPRISE)\s*:\s*[A-Za-z0-9_]+)'
+    
     try:
-        sections = re.split(r'(DOSSIER\s*:\s*[A-Za-z0-9_]+)', content, flags=re.IGNORECASE)
+        sections = re.split(split_pattern, content, flags=re.IGNORECASE)
         
         for i in range(1, len(sections), 2):
-            header = sections[i]  # Ex: "DOSSIER : 000003"
+            header = sections[i]  # Ex: "ENTREPRISE : 000003"
             body = sections[i+1]
             
-            # Extraction ID propre
-            # On prend ce qui est après le ":"
+            # Extraction propre de l'ID après le ":"
             if ":" in header:
                 raw_id = header.split(":", 1)[1].strip()
-                # On enlève les éventuels caractères invisibles
                 clean_id = "".join(c for c in raw_id if c.isalnum())
                 
                 # Nettoyage body
                 clean_body = body.split('...................')[0].strip()
+                clean_body = clean_body.split('===================')[0].strip()
                 
                 db[clean_id] = clean_body
                 
@@ -224,8 +223,6 @@ def load_text_database(filepath):
 def get_text_from_db(company_folder_name, db):
     if not db: return None
     
-    # Nettoyage du nom du dossier pour matcher la clé
-    # Ex: "000003_NOM" -> "000003"
     target_id = "".join(c for c in company_folder_name.split('_')[0] if c.isalnum())
     
     # 1. Match Exact
@@ -359,8 +356,8 @@ st.title("📊 Finance & Restauration : Dashboard Hybride")
 # --- BARRE LATÉRALE ---
 st.sidebar.header("📂 Sélection Entreprise")
 
-# Mode Debug (Pour vérifier les profils)
-debug_mode = st.sidebar.checkbox("🛠️ Mode Debug (Fichiers & Profils)")
+# Mode Debug
+debug_mode = st.sidebar.checkbox("🛠️ Mode Debug (Profils)")
 
 companies = []
 if os.path.exists(DATA_ROOT_DIR) and os.path.isdir(DATA_ROOT_DIR):
@@ -430,19 +427,18 @@ if all_dfs:
         profil_db, status_msg = load_text_database(PROFILE_FILE)
         profil_text = get_text_from_db(selected_company, profil_db)
         
-        # ZONE DEBUG : Voir pourquoi ça ne marche pas
+        # ZONE DEBUG
         if debug_mode:
             st.sidebar.markdown("---")
-            st.sidebar.warning(f"Statut Profils : {status_msg}")
-            st.sidebar.write(f"Clés trouvées dans '{PROFILE_FILE}':")
-            st.sidebar.write(list(profil_db.keys()))
-            st.sidebar.write(f"ID recherché : {''.join(c for c in selected_company.split('_')[0] if c.isalnum())}")
+            st.sidebar.info(f"Fichier Profils : {status_msg}")
+            st.sidebar.write("Clés lues :", list(profil_db.keys()))
+            st.sidebar.write("ID Cherché :", "".join(c for c in selected_company.split('_')[0] if c.isalnum()))
 
         if profil_text:
             with st.expander(f"👤 Profil Stratégique : {selected_company}", expanded=True):
                 st.markdown(f"```text\n{profil_text}\n```")
         else:
-            st.info(f"ℹ️ Profil non trouvé pour '{selected_company}'. (Activez le Mode Debug à gauche pour voir les clés disponibles)")
+            st.info(f"ℹ️ Aucun profil identifié pour '{selected_company}'.")
 
         # --- 2. KPI ---
         st.markdown("---")
