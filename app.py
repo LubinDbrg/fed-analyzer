@@ -459,24 +459,24 @@ if all_dfs:
         with col1:
             c1_head, c1_btn = st.columns([0.8, 0.2])
             c1_head.write("")
-            if c1_btn.button("🔍 Agrandir", key="btn_ca"): show_zoomed_chart(fig_ca, "Chiffre d'Affaires", global_min_date, global_max_date)
+            if c1_btn.button("🔍", key="btn_ca"): show_zoomed_chart(fig_ca, "Chiffre d'Affaires", global_min_date, global_max_date)
             st.plotly_chart(fig_ca, use_container_width=True)
         with col2:
             c2_head, c2_btn = st.columns([0.8, 0.2])
             c2_head.write("")
-            if c2_btn.button("🔍 Agrandir", key="btn_ebitda"): show_zoomed_chart(fig_eb, "EBITDA", global_min_date, global_max_date)
+            if c2_btn.button("🔍", key="btn_ebitda"): show_zoomed_chart(fig_eb, "EBITDA", global_min_date, global_max_date)
             st.plotly_chart(fig_eb, use_container_width=True)
 
         col3, col4 = st.columns(2)
         with col3:
             c3_head, c3_btn = st.columns([0.8, 0.2])
             c3_head.write("")
-            if c3_btn.button("🔍 Agrandir", key="btn_res"): show_zoomed_chart(fig_res, "Résultat Net", global_min_date, global_max_date)
+            if c3_btn.button("🔍", key="btn_res"): show_zoomed_chart(fig_res, "Résultat Net", global_min_date, global_max_date)
             st.plotly_chart(fig_res, use_container_width=True)
         with col4:
             c4_head, c4_btn = st.columns([0.8, 0.2])
             c4_head.write("")
-            if c4_btn.button("🔍 Agrandir", key="btn_tr"): show_zoomed_chart(fig_tr, "Trésorerie", global_min_date, global_max_date)
+            if c4_btn.button("🔍", key="btn_tr"): show_zoomed_chart(fig_tr, "Trésorerie", global_min_date, global_max_date)
             st.plotly_chart(fig_tr, use_container_width=True)
         
         # Section Conseils
@@ -517,3 +517,4 @@ if all_dfs:
         st.warning("Aucune donnée valide trouvée dans les fichiers de cette entreprise.")
 elif not companies:
     st.info("Veuillez ajouter le dossier 'FEC_site' dans le dossier du projet pour commencer.")
+
