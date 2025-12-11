@@ -170,66 +170,71 @@ def predict_gemini_forecasting(series_history, months_to_predict, trend_factor, 
         print(f"Erreur Gemini Forecasting: {e}")
         return None
 
-# --- 4. LOGIQUE FICHIER TEXTE (ROBUSTE) ---
+# --- 4. LOGIQUE FICHIER TEXTE (PARSER UNIVERSEL) ---
 
 @st.cache_data
 def load_text_database(filepath):
     """
-    Charge un fichier texte avec un parser Regex robuste.
-    Cherche 'DOSSIER : [CODE]' peu importe les espaces.
+    Charge un fichier texte avec un parser 'Tout Terrain'
+    Gère les encodages et les formats "DOSSIER: " vs "DOSSIER :"
     """
     db = {}
     if not os.path.exists(filepath):
-        return db
+        return db, "Fichier introuvable"
         
+    content = ""
+    # 1. Tentative de lecture multi-encodage
+    for encoding in ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']:
+        try:
+            with open(filepath, "r", encoding=encoding) as f:
+                content = f.read()
+            break # Si ça marche, on sort
+        except:
+            continue
+            
+    if not content:
+        return db, "Echec lecture (Encodage)"
+
+    # 2. Découpage par mot clé "DOSSIER" (Case insensitive)
+    # On cherche "DOSSIER" suivi de n'importe quoi jusqu'à un ":"
+    # Pattern: DOSSIER\s*:\s*([A-Za-z0-9_]+)
     try:
-        with open(filepath, "r", encoding="utf-8", errors='replace') as f:
-            content = f.read()
-            
-        # Regex pour trouver le titre du dossier : DOSSIER + espaces + : + espaces + Code
-        # On découpe le fichier par blocs
-        # Pattern explicite : (DOSSIER\s*:\s*[A-Za-z0-9_]+)
-        split_pattern = r'(DOSSIER\s*:\s*[A-Za-z0-9_]+)'
+        sections = re.split(r'(DOSSIER\s*:\s*[A-Za-z0-9_]+)', content, flags=re.IGNORECASE)
         
-        parts = re.split(split_pattern, content)
-        
-        # parts[0] est le texte avant le premier dossier (souvent l'intro)
-        # Ensuite ça va par paire : [Titre, Contenu, Titre, Contenu...]
-        
-        for i in range(1, len(parts), 2):
-            title_line = parts[i].strip() # Ex: "DOSSIER : 000003"
-            body = parts[i+1].strip()
+        for i in range(1, len(sections), 2):
+            header = sections[i]  # Ex: "DOSSIER : 000003"
+            body = sections[i+1]
             
-            # Extraction propre de l'ID depuis la ligne de titre
-            # On cherche juste le code alphanumérique après les deux points
-            match_id = re.search(r':\s*([A-Za-z0-9_]+)', title_line)
-            
-            if match_id:
-                dossier_id = match_id.group(1).strip()
-                # On nettoie le contenu des séparateurs de fin (...)
+            # Extraction ID propre
+            # On prend ce qui est après le ":"
+            if ":" in header:
+                raw_id = header.split(":", 1)[1].strip()
+                # On enlève les éventuels caractères invisibles
+                clean_id = "".join(c for c in raw_id if c.isalnum())
+                
+                # Nettoyage body
                 clean_body = body.split('...................')[0].strip()
                 
-                # On reconstruit un affichage propre
-                full_content = f"{title_line}\n\n{clean_body}"
-                db[dossier_id] = full_content
+                db[clean_id] = clean_body
                 
-        return db
+        return db, "Succès"
     except Exception as e:
-        st.error(f"Erreur de lecture du fichier {filepath} : {e}")
-        return {}
+        return db, f"Erreur Parsing: {e}"
 
 def get_text_from_db(company_folder_name, db):
-    """Récupère le texte associé à un dossier (Match exact ou partiel)"""
     if not db: return None
     
-    # 1. Correspondance Exacte
-    if company_folder_name in db:
-        return db[company_folder_name]
+    # Nettoyage du nom du dossier pour matcher la clé
+    # Ex: "000003_NOM" -> "000003"
+    target_id = "".join(c for c in company_folder_name.split('_')[0] if c.isalnum())
     
-    # 2. Correspondance Partielle (Ex: "000003" dans "000003_NOM")
-    # On parcourt les clés de la DB (ex: "000003") et on regarde si elle est dans le nom du dossier
+    # 1. Match Exact
+    if target_id in db:
+        return db[target_id]
+        
+    # 2. Match Partiel
     for key in db.keys():
-        if key in company_folder_name:
+        if key in target_id or target_id in key:
             return db[key]
             
     return None
@@ -354,6 +359,9 @@ st.title("📊 Finance & Restauration : Dashboard Hybride")
 # --- BARRE LATÉRALE ---
 st.sidebar.header("📂 Sélection Entreprise")
 
+# Mode Debug (Pour vérifier les profils)
+debug_mode = st.sidebar.checkbox("🛠️ Mode Debug (Fichiers & Profils)")
+
 companies = []
 if os.path.exists(DATA_ROOT_DIR) and os.path.isdir(DATA_ROOT_DIR):
     companies = sorted([d for d in os.listdir(DATA_ROOT_DIR) if os.path.isdir(os.path.join(DATA_ROOT_DIR, d))])
@@ -405,10 +413,6 @@ api_key_input = None
 if "Gemini" in forecast_method or "Gemini" in advice_method:
     api_key_input = st.sidebar.text_input("🔑 Clé API Gemini", type="password")
 
-# --- DEBUG : AFFICHER LES PROFILS TROUVÉS (TEMPORAIRE SI BESOIN) ---
-# profil_db_test = load_text_database(PROFILE_FILE)
-# st.sidebar.write(f"Profils chargés : {list(profil_db_test.keys())}")
-
 # --- BOUTON DE LANCEMENT (CACHE) ---
 st.sidebar.markdown("---")
 launch_calc = st.sidebar.button("⚡ Lancer la Prédiction (Tous Scénarios)")
@@ -421,16 +425,24 @@ if all_dfs:
     df_treso = calculer_tresorerie_quotidienne(df_global)
 
     if not df_m.empty:
-        # --- 1. AFFICHAGE DU PROFIL (IMMEDIATEMENT EN HAUT) ---
-        profil_db = load_text_database(PROFILE_FILE)
+        
+        # --- 1. AFFICHAGE DU PROFIL (PRIORITAIRE) ---
+        profil_db, status_msg = load_text_database(PROFILE_FILE)
         profil_text = get_text_from_db(selected_company, profil_db)
         
+        # ZONE DEBUG : Voir pourquoi ça ne marche pas
+        if debug_mode:
+            st.sidebar.markdown("---")
+            st.sidebar.warning(f"Statut Profils : {status_msg}")
+            st.sidebar.write(f"Clés trouvées dans '{PROFILE_FILE}':")
+            st.sidebar.write(list(profil_db.keys()))
+            st.sidebar.write(f"ID recherché : {''.join(c for c in selected_company.split('_')[0] if c.isalnum())}")
+
         if profil_text:
             with st.expander(f"👤 Profil Stratégique : {selected_company}", expanded=True):
                 st.markdown(f"```text\n{profil_text}\n```")
         else:
-            # Message d'aide si non trouvé
-            st.info(f"ℹ️ Pas de profil trouvé pour '{selected_company}' dans '{PROFILE_FILE}'. Vérifiez que le nom du dossier est bien dans le fichier texte.")
+            st.info(f"ℹ️ Profil non trouvé pour '{selected_company}'. (Activez le Mode Debug à gauche pour voir les clés disponibles)")
 
         # --- 2. KPI ---
         st.markdown("---")
@@ -493,7 +505,7 @@ if all_dfs:
                     stats = {k: format_fr_currency(v) for k,v in {'CA': last_m['CA'], 'EBITDA': last_m['EBITDA'], 'Resultat': last_m['Resultat'], 'Treso': df_treso.iloc[-1]}.items()}
                     st.session_state['advice_result'] = generer_conseils_gemini(api_key_input, stats)
             else:
-                advice_db = load_text_database(ADVICE_FILE)
+                advice_db, _ = load_text_database(ADVICE_FILE)
                 st.session_state['advice_result'] = get_text_from_db(selected_company, advice_db)
 
         # --- AFFICHAGE GRAPHIQUES ---
