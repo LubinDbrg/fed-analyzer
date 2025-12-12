@@ -7,7 +7,8 @@ ENTREPRISE : 000003
 ------------------------------
 PROFIL IDENTIFIÉ : 4. Le Découvert Structurel (Découvert Critique)
 FOCUS CLÉ : Dépendance au Financement Court
-DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué par une utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
+DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué par une utilisation régulière 
+et significative du découvert bancaire ou des facilités de caisse.
 INDICATEURS MOYENS :
  - ratio d'endettement: 2.042
  - Poids liquidités: 0.778
@@ -21,7 +22,8 @@ ENTREPRISE : 000011
 ------------------------------
 PROFIL IDENTIFIÉ : 6. La Gestion Stratégique (Liquidité Minimale)
 FOCUS CLÉ : Liquidité Stratégique / Optimisme
-DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
+DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement 
+les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
 INDICATEURS MOYENS :
  - ratio d'endettement: 6.305
  - Poids liquidités: 0.436
@@ -35,7 +37,8 @@ ENTREPRISE : 000019
 ------------------------------
 PROFIL IDENTIFIÉ : 6. La Gestion Stratégique (Liquidité Minimale)
 FOCUS CLÉ : Liquidité Stratégique / Optimisme
-DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
+DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement 
+les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
 INDICATEURS MOYENS :
  - ratio d'endettement: 9.516
  - Poids liquidités: 0.575
@@ -49,7 +52,8 @@ ENTREPRISE : 000044
 ------------------------------
 PROFIL IDENTIFIÉ : 3. Le Prévoyant (Max Anticipation)
 FOCUS CLÉ : Sécurité / Provisions
-DESCRIPTION : Ce profil est axé sur la sécurité, maintenant un provisionnement important pour anticiper les risques futurs. Il valorise la robustesse financière.
+DESCRIPTION : Ce profil est axé sur la sécurité, maintenant un provisionnement important pour anticiper les 
+risques futurs. Il valorise la robustesse financière.
 INDICATEURS MOYENS :
  - ratio d'endettement: 3.506
  - Poids liquidités: 0.402
@@ -63,7 +67,8 @@ ENTREPRISE : 000062
 ------------------------------
 PROFIL IDENTIFIÉ : 4. Le Découvert Structurel (Découvert Critique)
 FOCUS CLÉ : Dépendance au Financement Court
-DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué par une utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
+DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué par 
+une utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
 INDICATEURS MOYENS :
  - ratio d'endettement: 3.589
  - Poids liquidités: 0.697
@@ -77,7 +82,8 @@ ENTREPRISE : 000064
 ------------------------------
 PROFIL IDENTIFIÉ : 6. La Gestion Stratégique (Liquidité Minimale)
 FOCUS CLÉ : Liquidité Stratégique / Optimisme
-DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
+DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir 
+immédiatement les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
 INDICATEURS MOYENS :
  - ratio d'endettement: 7.348
  - Poids liquidités: 0.508
@@ -91,7 +97,8 @@ ENTREPRISE : 000068
 ------------------------------
 PROFIL IDENTIFIÉ : 6. La Gestion Stratégique (Liquidité Minimale)
 FOCUS CLÉ : Liquidité Stratégique / Optimisme
-DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
+DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement 
+les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
 INDICATEURS MOYENS :
  - ratio d'endettement: 5.359
  - Poids liquidités: 0.524
@@ -105,7 +112,8 @@ ENTREPRISE : 000077
 ------------------------------
 PROFIL IDENTIFIÉ : 6. La Gestion Stratégique (Liquidité Minimale)
 FOCUS CLÉ : Liquidité Stratégique / Optimisme
-DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
+DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement 
+les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
 INDICATEURS MOYENS :
  - ratio d'endettement: 3.387
  - Poids liquidités: 0.469
@@ -119,7 +127,8 @@ ENTREPRISE : 000093
 ------------------------------
 PROFIL IDENTIFIÉ : 6. La Gestion Stratégique (Liquidité Minimale)
 FOCUS CLÉ : Liquidité Stratégique / Optimisme
-DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
+DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement 
+les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
 INDICATEURS MOYENS :
  - ratio d'endettement: 8.957
  - Poids liquidités: 0.556
@@ -133,7 +142,8 @@ ENTREPRISE : 000111
 ------------------------------
 PROFIL IDENTIFIÉ : 4. Le Découvert Structurel (Découvert Critique)
 FOCUS CLÉ : Dépendance au Financement Court
-DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué par une utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
+DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué par une 
+utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
 INDICATEURS MOYENS :
  - ratio d'endettement: 5.167
  - Poids liquidités: 0.611
@@ -147,7 +157,8 @@ ENTREPRISE : 000162
 ------------------------------
 PROFIL IDENTIFIÉ : 4. Le Découvert Structurel (Découvert Critique)
 FOCUS CLÉ : Dépendance au Financement Court
-DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué par une utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
+DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué par une 
+utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
 INDICATEURS MOYENS :
  - ratio d'endettement: 2.552
  - Poids liquidités: 0.689
@@ -161,7 +172,8 @@ ENTREPRISE : 000170
 ------------------------------
 PROFIL IDENTIFIÉ : 6. La Gestion Stratégique (Liquidité Minimale)
 FOCUS CLÉ : Liquidité Stratégique / Optimisme
-DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
+DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement 
+les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
 INDICATEURS MOYENS :
  - ratio d'endettement: 2.107
  - Poids liquidités: 0.273
@@ -175,7 +187,8 @@ ENTREPRISE : 000188
 ------------------------------
 PROFIL IDENTIFIÉ : 6. La Gestion Stratégique (Liquidité Minimale)
 FOCUS CLÉ : Liquidité Stratégique / Optimisme
-DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
+DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir 
+immédiatement les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
 INDICATEURS MOYENS :
  - ratio d'endettement: 5.521
  - Poids liquidités: 0.519
@@ -189,7 +202,8 @@ ENTREPRISE : 000191
 ------------------------------
 PROFIL IDENTIFIÉ : 6. La Gestion Stratégique (Liquidité Minimale)
 FOCUS CLÉ : Liquidité Stratégique / Optimisme
-DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
+DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement 
+les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
 INDICATEURS MOYENS :
  - ratio d'endettement: 5.945
  - Poids liquidités: 0.434
@@ -203,7 +217,8 @@ ENTREPRISE : 000200
 ------------------------------
 PROFIL IDENTIFIÉ : 5. Le Rigoureux (Max Efficacité)
 FOCUS CLÉ : Efficience des Opérations
-DESCRIPTION : Ce profil se distingue par une gestion optimisée des actifs de cycle court, notamment une excellente rotation des stocks. Il recherche l'efficacité opérationnelle maximale.
+DESCRIPTION : Ce profil se distingue par une gestion optimisée des actifs de cycle court, notamment une 
+excellente rotation des stocks. Il recherche l'efficacité opérationnelle maximale.
 INDICATEURS MOYENS :
  - ratio d'endettement: 16.238
  - Poids liquidités: 0.352
@@ -217,7 +232,8 @@ ENTREPRISE : 000221
 ------------------------------
 PROFIL IDENTIFIÉ : 6. La Gestion Stratégique (Liquidité Minimale)
 FOCUS CLÉ : Liquidité Stratégique / Optimisme
-DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
+DESCRIPTION : Ce profil indique une gestion volontairement serrée de la trésorerie pour réinvestir immédiatement 
+les fonds. Cela traduit un optimisme stratégique et une grande confiance dans la prévisibilité des flux de trésorerie.
 INDICATEURS MOYENS :
  - ratio d'endettement: 8.776
  - Poids liquidités: 0.538
@@ -231,7 +247,8 @@ ENTREPRISE : 000225
 ------------------------------
 PROFIL IDENTIFIÉ : 5. Le Rigoureux (Max Efficacité)
 FOCUS CLÉ : Efficience des Opérations
-DESCRIPTION : Ce profil se distingue par une gestion optimisée des actifs de cycle court, notamment une excellente rotation des stocks. Il recherche l'efficacité opérationnelle maximale.
+DESCRIPTION : Ce profil se distingue par une gestion optimisée des actifs de cycle court, notamment une 
+excellente rotation des stocks. Il recherche l'efficacité opérationnelle maximale.
 INDICATEURS MOYENS :
  - ratio d'endettement: 20.000
  - Poids liquidités: 0.527
@@ -245,7 +262,8 @@ ENTREPRISE : 000251
 ------------------------------
 PROFIL IDENTIFIÉ : 5. Le Rigoureux (Max Efficacité)
 FOCUS CLÉ : Efficience des Opérations
-DESCRIPTION : Ce profil se distingue par une gestion optimisée des actifs de cycle court, notamment une excellente rotation des stocks. Il recherche l'efficacité opérationnelle maximale.
+DESCRIPTION : Ce profil se distingue par une gestion optimisée des actifs de cycle court, notamment 
+une excellente rotation des stocks. Il recherche l'efficacité opérationnelle maximale.
 INDICATEURS MOYENS :
  - ratio d'endettement: 20.000
  - Poids liquidités: 0.358
@@ -259,7 +277,8 @@ ENTREPRISE : 000299
 ------------------------------
 PROFIL IDENTIFIÉ : 5. Le Rigoureux (Max Efficacité)
 FOCUS CLÉ : Efficience des Opérations
-DESCRIPTION : Ce profil se distingue par une gestion optimisée des actifs de cycle court, notamment une excellente rotation des stocks. Il recherche l'efficacité opérationnelle maximale.
+DESCRIPTION : Ce profil se distingue par une gestion optimisée des actifs de cycle court, notamment 
+une excellente rotation des stocks. Il recherche l'efficacité opérationnelle maximale.
 INDICATEURS MOYENS :
  - ratio d'endettement: 20.000
  - Poids liquidités: 0.438
@@ -273,7 +292,8 @@ ENTREPRISE : 017313
 ------------------------------
 PROFIL IDENTIFIÉ : 3. Le Prévoyant (Max Anticipation)
 FOCUS CLÉ : Sécurité / Provisions
-DESCRIPTION : Ce profil est axé sur la sécurité, maintenant un provisionnement important pour anticiper les risques futurs. Il valorise la robustesse financière.
+DESCRIPTION : Ce profil est axé sur la sécurité, maintenant un provisionnement important pour 
+anticiper les risques futurs. Il valorise la robustesse financière.
 INDICATEURS MOYENS :
  - ratio d'endettement: 3.661
  - Poids liquidités: 0.307
@@ -287,7 +307,8 @@ ENTREPRISE : 017463
 ------------------------------
 PROFIL IDENTIFIÉ : 4. Le Découvert Structurel (Découvert Critique)
 FOCUS CLÉ : Dépendance au Financement Court
-DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué par une utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
+DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué 
+par une utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
 INDICATEURS MOYENS :
  - ratio d'endettement: 2.280
  - Poids liquidités: 0.634
@@ -301,7 +322,8 @@ ENTREPRISE : 018292
 ------------------------------
 PROFIL IDENTIFIÉ : 2. Le Conservateur (Min Dette)
 FOCUS CLÉ : Fonds Propres / Prudence
-DESCRIPTION : Ce dirigeant privilégie une approche financière prudente. L'entreprise utilise très peu ou pas de dette financière externe et s'appuie principalement sur les capitaux propres et la stabilité.
+DESCRIPTION : Ce dirigeant privilégie une approche financière prudente. L'entreprise utilise très 
+peu ou pas de dette financière externe et s'appuie principalement sur les capitaux propres et la stabilité.
 INDICATEURS MOYENS :
  - ratio d'endettement: 0.340
  - Poids liquidités: 0.290
@@ -315,7 +337,8 @@ ENTREPRISE : 018302
 ------------------------------
 PROFIL IDENTIFIÉ : 4. Le Découvert Structurel (Découvert Critique)
 FOCUS CLÉ : Dépendance au Financement Court
-DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué par une utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
+DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué 
+par une utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
 INDICATEURS MOYENS :
  - ratio d'endettement: 2.846
  - Poids liquidités: 0.667
@@ -329,7 +352,8 @@ ENTREPRISE : 018403
 ------------------------------
 PROFIL IDENTIFIÉ : 2. Le Conservateur (Min Dette)
 FOCUS CLÉ : Fonds Propres / Prudence
-DESCRIPTION : Ce dirigeant privilégie une approche financière prudente. L'entreprise utilise très peu ou pas de dette financière externe et s'appuie principalement sur les capitaux propres et la stabilité.
+DESCRIPTION : Ce dirigeant privilégie une approche financière prudente. L'entreprise utilise très 
+peu ou pas de dette financière externe et s'appuie principalement sur les capitaux propres et la stabilité.
 INDICATEURS MOYENS :
  - ratio d'endettement: 0.007
  - Poids liquidités: 0.406
@@ -343,7 +367,8 @@ ENTREPRISE : 040621
 ------------------------------
 PROFIL IDENTIFIÉ : 1. L'Opportuniste (Max Dette)
 FOCUS CLÉ : Dette / Croissance
-DESCRIPTION : Ce profil utilise l'endettement de manière significative pour financer la croissance ou les actifs. Il reflète une stratégie dynamique mais avec un niveau de risque plus élevé.
+DESCRIPTION : Ce profil utilise l'endettement de manière significative pour financer la 
+croissance ou les actifs. Il reflète une stratégie dynamique mais avec un niveau de risque plus élevé.
 INDICATEURS MOYENS :
  - ratio d'endettement: 19.218
  - Poids liquidités: 0.398
@@ -357,7 +382,8 @@ ENTREPRISE : 040647
 ------------------------------
 PROFIL IDENTIFIÉ : 4. Le Découvert Structurel (Découvert Critique)
 FOCUS CLÉ : Dépendance au Financement Court
-DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, marqué par une utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
+DESCRIPTION : L'entreprise présente un besoin structurel de financement à très court terme, 
+marqué par une utilisation régulière et significative du découvert bancaire ou des facilités de caisse.
 INDICATEURS MOYENS :
  - ratio d'endettement: 0.656
  - Poids liquidités: 0.655
@@ -371,7 +397,8 @@ ENTREPRISE : 040694
 ------------------------------
 PROFIL IDENTIFIÉ : 1. L'Opportuniste (Max Dette)
 FOCUS CLÉ : Dette / Croissance
-DESCRIPTION : Ce profil utilise l'endettement de manière significative pour financer la croissance ou les actifs. Il reflète une stratégie dynamique mais avec un niveau de risque plus élevé.
+DESCRIPTION : Ce profil utilise l'endettement de manière significative pour financer la 
+croissance ou les actifs. Il reflète une stratégie dynamique mais avec un niveau de risque plus élevé.
 INDICATEURS MOYENS :
  - ratio d'endettement: 20.000
  - Poids liquidités: 0.225
@@ -385,7 +412,8 @@ ENTREPRISE : 040880
 ------------------------------
 PROFIL IDENTIFIÉ : 1. L'Opportuniste (Max Dette)
 FOCUS CLÉ : Dette / Croissance
-DESCRIPTION : Ce profil utilise l'endettement de manière significative pour financer la croissance ou les actifs. Il reflète une stratégie dynamique mais avec un niveau de risque plus élevé.
+DESCRIPTION : Ce profil utilise l'endettement de manière significative pour financer la 
+croissance ou les actifs. Il reflète une stratégie dynamique mais avec un niveau de risque plus élevé.
 INDICATEURS MOYENS :
  - ratio d'endettement: 20.000
  - Poids liquidités: 0.347
@@ -399,7 +427,8 @@ ENTREPRISE : 040991
 ------------------------------
 PROFIL IDENTIFIÉ : 5. Le Rigoureux (Max Efficacité)
 FOCUS CLÉ : Efficience des Opérations
-DESCRIPTION : Ce profil se distingue par une gestion optimisée des actifs de cycle court, notamment une excellente rotation des stocks. Il recherche l'efficacité opérationnelle maximale.
+DESCRIPTION : Ce profil se distingue par une gestion optimisée des actifs de cycle court, 
+notamment une excellente rotation des stocks. Il recherche l'efficacité opérationnelle maximale.
 INDICATEURS MOYENS :
  - ratio d'endettement: 16.797
  - Poids liquidités: 0.515
@@ -413,7 +442,8 @@ ENTREPRISE : 103569003FEC20241231
 ------------------------------
 PROFIL IDENTIFIÉ : 1. L'Opportuniste (Max Dette)
 FOCUS CLÉ : Dette / Croissance
-DESCRIPTION : Ce profil utilise l'endettement de manière significative pour financer la croissance ou les actifs. Il reflète une stratégie dynamique mais avec un niveau de risque plus élevé.
+DESCRIPTION : Ce profil utilise l'endettement de manière significative pour financer la 
+croissance ou les actifs. Il reflète une stratégie dynamique mais avec un niveau de risque plus élevé.
 INDICATEURS MOYENS :
  - ratio d'endettement: 20.000
  - Poids liquidités: 0.220
@@ -422,4 +452,5 @@ INDICATEURS MOYENS :
  - rotation des stock: 0.194
 
 ================================================================================
+
 
